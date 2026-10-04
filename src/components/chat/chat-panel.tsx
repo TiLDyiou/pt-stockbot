@@ -376,7 +376,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-3 select-text"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 select-text"
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
