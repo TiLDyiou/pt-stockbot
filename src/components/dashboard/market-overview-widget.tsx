@@ -65,44 +65,30 @@ export function MarketOverviewWidget({
   return (
     <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] text-slate-800 dark:text-zinc-200 overflow-hidden select-none">
       {/* 1. Module Header */}
-      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/70 dark:bg-zinc-900/50 shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 shrink-0">
         <div className="flex items-center gap-2">
           {dragHandle}
           <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
             <EarthIcon size={15} className="text-emerald-500" animateOnHover />
           </div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-              Tổng quan thị trường
-            </h3>
-            {data?.index && (
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-slate-200/60 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
-                <strong className="text-slate-900 dark:text-white">{data.index.symbol}</strong>
-                <span>{data.index.close?.toFixed(2)}</span>
-                <span
-                  className={
-                    data.index.change >= 0 ? "text-emerald-500 font-bold" : "text-rose-500 font-bold"
-                  }
-                >
-                  {data.index.change >= 0 ? "+" : ""}
-                  {data.index.change?.toFixed(2)} ({data.index.changePercent >= 0 ? "+" : ""}
-                  {data.index.changePercent?.toFixed(2)}%)
-                </span>
+          {data?.index && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300">
+              <strong className="text-slate-900 dark:text-white">{data.index.symbol}</strong>
+              <span>{data.index.close?.toFixed(2)}</span>
+              <span
+                className={
+                  data.index.change >= 0 ? "text-emerald-500 font-bold" : "text-rose-500 font-bold"
+                }
+              >
+                {data.index.change >= 0 ? "+" : ""}
+                {data.index.change?.toFixed(2)} ({data.index.changePercent >= 0 ? "+" : ""}
+                {data.index.changePercent?.toFixed(2)}%)
               </span>
-            )}
-          </div>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={fetchOverview}
-            disabled={isLoading}
-            className="p-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
-            title="Làm mới dữ liệu thị trường"
-          >
-            <RefreshCwIcon size={13} className={isLoading ? "animate-spin" : ""} animateOnHover />
-          </button>
-
           {onToggleMaximize && (
             <button
               onClick={onToggleMaximize}
