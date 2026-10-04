@@ -367,9 +367,9 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "relative flex flex-col h-full bg-slate-50/50 dark:bg-[#0c0c0e] border-r border-slate-200/80 dark:border-zinc-800/80 select-none transition-colors",
+        "relative flex flex-col h-full bg-slate-50 dark:bg-[#0c0c0e] border-r border-slate-200 dark:border-zinc-800 select-none transition-colors",
         isDraggingOver &&
-          "ring-2 ring-inset ring-emerald-500/60 bg-emerald-50/5 dark:bg-emerald-950/10",
+          "ring-2 ring-inset ring-emerald-500 bg-emerald-50 dark:bg-emerald-950",
       )}
     >
       {/* Message List */}
@@ -462,24 +462,23 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
         )}
       </div>
 
-      {/* Input Area (KokonutUI AI Input Search inspired) */}
-      <div className="relative p-2.5 bg-white dark:bg-[#171718] border-t border-slate-200/80 dark:border-zinc-800/80">
+      {/* Input Area */}
+      <div className="relative p-2.5 bg-white dark:bg-[#171718] border-t border-slate-200 dark:border-zinc-800">
         <form onSubmit={onFormSubmit} className="w-full">
           <div
             aria-label="Khung nhập câu hỏi AI"
             className={cn(
               "relative flex w-full cursor-text items-center rounded-2xl text-left transition-all duration-200",
-              "bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/90 dark:border-zinc-800/90",
-              "ring-1 ring-black/5 dark:ring-white/5",
+              "bg-slate-100 dark:bg-zinc-900 border-none outline-none",
               isFocused &&
-                "ring-2 ring-emerald-500/30 border-emerald-500/50 dark:border-emerald-500/50 shadow-xs",
+                "ring-2 ring-emerald-500 shadow-xs",
               isDraggingOver &&
-                "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-md",
+                "ring-2 ring-emerald-500 bg-emerald-100 dark:bg-emerald-950 shadow-md",
             )}
             onClick={handleContainerClick}
           >
             {isDraggingOver && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-950/90 backdrop-blur-xs border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500 dark:bg-emerald-950 border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
                 <span>Thả mã hoặc module Danh mục để phân tích xu hướng</span>
               </div>
             )}
@@ -513,13 +512,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
               <button
                 type="button"
                 onClick={handleClearHistory}
-                disabled={messages.length === 0 || isLoading}
-                className={cn(
-                  "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
-                  messages.length > 0 && !isLoading
-                    ? "bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95"
-                    : "bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
-                )}
+                className="flex items-center justify-center h-7 w-7 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
                 title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
               >
                 <DeleteIcon size={13} animateOnHover />
