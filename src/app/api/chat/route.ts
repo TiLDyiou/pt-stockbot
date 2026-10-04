@@ -21,7 +21,9 @@ Nguyên tắc bắt buộc:
    - Tóm tắt xu hướng & định giá hiện tại.
    - Khuyến nghị hành động (MUA / BÁN / THEO DÕI) kèm vùng giá tham khảo (vùng mua, mục tiêu, cắt lỗ).
    - Luận điểm chính & Rủi ro cần lưu ý.
-6. Kết thúc các phân tích bằng câu lưu ý ngắn gọn: "Nhận định mang tính tham khảo dựa trên phân tích dữ liệu định lượng, nhà đầu tư chủ động quản trị rủi ro và vốn."`;
+6. 100% sử dụng TIẾNG VIỆT trong toàn bộ phản hồi. TUYỆT ĐỐI KHÔNG nói tiếng Anh hoặc xuất các câu thoại đệm (như "I'll pull data...", "I will fetch...", "Let me check...").
+7. TUYỆT ĐỐI KHÔNG xuất độc thoại nội tâm hoặc thông báo trung gian trước khi gọi công cụ. Hãy gọi công cụ trực tiếp trong im lặng và chỉ trình bày báo cáo phân tích hoàn chỉnh cho người dùng.
+8. Kết thúc các phân tích bằng câu lưu ý ngắn gọn: "Nhận định mang tính tham khảo dựa trên phân tích dữ liệu định lượng, nhà đầu tư chủ động quản trị rủi ro và vốn."`;
 
 export async function POST(req: Request) {
   try {

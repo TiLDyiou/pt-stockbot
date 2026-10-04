@@ -68,7 +68,15 @@ export function ChatMessageItem({
     );
   }, [message.toolInvocations]);
 
-  const hasContent = Boolean(message.content && message.content.trim().length > 0);
+  const displayContent = React.useMemo(() => {
+    if (isUser || !message.content) return message.content;
+    // Strip English tool preambles that LLMs sometimes hallucinate before calling tools
+    return message.content
+      .replace(/^(?:I'll|I will|Let me|I'm going to)\s+[^.\n]+(?:\.|\n)+/i, "")
+      .trim();
+  }, [isUser, message.content]);
+
+  const hasContent = Boolean(displayContent && displayContent.length > 0);
   const isThinking = isStreaming && (!hasContent || hasPendingTools);
 
   const steps = React.useMemo(() => {
@@ -214,7 +222,7 @@ export function ChatMessageItem({
                   ),
                 }}
               >
-                {message.content}
+                {displayContent}
               </ReactMarkdown>
 
               {/* Pulsing emerald cursor while text is streaming */}
