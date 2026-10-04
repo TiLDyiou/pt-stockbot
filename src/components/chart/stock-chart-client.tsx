@@ -1178,7 +1178,7 @@ export default function StockChartClient({
               onClick={() => setShowSma20(!showSma20)}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                 showSma20
-                  ? "bg-emerald-600 text-white shadow-xs border-emerald-600"
+                  ? "bg-sky-600 hover:bg-sky-500 text-white shadow-xs border-sky-600"
                   : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 border-slate-200 dark:border-zinc-700"
               }`}
               title="Bật/tắt đường chỉ báo SMA20"
@@ -1190,7 +1190,7 @@ export default function StockChartClient({
               onClick={() => setShowSma50(!showSma50)}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                 showSma50
-                  ? "bg-emerald-600 text-white shadow-xs border-emerald-600"
+                  ? "bg-orange-600 hover:bg-orange-500 text-white shadow-xs border-orange-600"
                   : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 border-slate-200 dark:border-zinc-700"
               }`}
               title="Bật/tắt đường chỉ báo SMA50"
