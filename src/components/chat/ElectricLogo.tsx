@@ -657,8 +657,8 @@ void main() {
 
 const ElectricLogo = ({
   src = BOLT,
-  color = '#ecc7ff',
-  glowColor = '#ad6dff',
+  color = '#a7f3d0',
+  glowColor = '#10b981',
   scale = 0.7,
   intensity = 1,
   glow = 1,

@@ -386,8 +386,8 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
             >
               <ElectricLogo
                 src="/candlestick.svg"
-                color="#ecc7ff"
-                glowColor="#ad6dff"
+                color="#a7f3d0"
+                glowColor="#10b981"
                 scale={0.75}
                 strands={4}
                 bend={0.6}
