@@ -3,7 +3,7 @@ import { getLanguageModel, getMaxOutputTokens } from "@/lib/ai/provider";
 import { sanitizeMessages } from "@/lib/ai/sanitize";
 import { stockTools } from "@/lib/ai/tools";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const SYSTEM_PROMPT = `Bạn là trợ lý ảo phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) khách quan, trung thực.
 
@@ -23,7 +23,8 @@ Nguyên tắc bắt buộc:
    - Luận điểm chính & Rủi ro cần lưu ý.
 6. 100% sử dụng TIẾNG VIỆT trong toàn bộ phản hồi. TUYỆT ĐỐI KHÔNG nói tiếng Anh hoặc xuất các câu thoại đệm (như "I'll pull data...", "I will fetch...", "Let me check...").
 7. TUYỆT ĐỐI KHÔNG xuất độc thoại nội tâm hoặc thông báo trung gian trước khi gọi công cụ. Hãy gọi công cụ trực tiếp trong im lặng và chỉ trình bày báo cáo phân tích hoàn chỉnh cho người dùng.
-8. Kết thúc các phân tích bằng câu lưu ý ngắn gọn: "Nhận định mang tính tham khảo dựa trên phân tích dữ liệu định lượng, nhà đầu tư chủ động quản trị rủi ro và vốn."`;
+8. Khi người dùng yêu cầu phân tích nhiều mã cổ phiếu cùng lúc, trình bày gãy gọn, cô đọng cho từng mã (tập trung: Thị giá, Xu hướng, Chỉ báo kỹ thuật chính, Khuyến nghị & Vùng giá), không dài dòng lan man để đảm bảo hoàn tất đầy đủ 100% báo cáo cho toàn bộ các mã mà không bị ngắt quãng giữa chừng.
+9. Kết thúc các phân tích bằng câu lưu ý ngắn gọn: "Nhận định mang tính tham khảo dựa trên phân tích dữ liệu định lượng, nhà đầu tư chủ động quản trị rủi ro và vốn."`;
 
 export async function POST(req: Request) {
   try {
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
       system: SYSTEM_PROMPT,
       messages: cleanMessages,
       tools: stockTools,
-      maxSteps: 5,
+      maxSteps: 10,
       maxTokens: getMaxOutputTokens(),
     });
 

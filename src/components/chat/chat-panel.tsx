@@ -67,7 +67,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     append,
   } = useChat({
     api: "/api/chat",
-    maxSteps: 5,
+    maxSteps: 10,
   });
 
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({

@@ -84,7 +84,8 @@ export function getLanguageModel(): LanguageModelV1 {
 
 export function getMaxOutputTokens(): number {
   const envVal = process.env.MAX_OUTPUT_TOKENS;
-  if (!envVal) return 1200;
+  if (!envVal) return 4000;
   const parsed = parseInt(envVal, 10);
-  return Number.isNaN(parsed) || parsed <= 0 ? 1200 : parsed;
+  return Number.isNaN(parsed) || parsed <= 0 ? 4000 : parsed;
 }
+

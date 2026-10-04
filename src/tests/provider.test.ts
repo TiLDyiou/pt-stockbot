@@ -61,12 +61,12 @@ describe("AI Provider Config", () => {
 
   it("returns default or parsed max output tokens", () => {
     delete process.env.MAX_OUTPUT_TOKENS;
-    expect(getMaxOutputTokens()).toBe(1200);
+    expect(getMaxOutputTokens()).toBe(4000);
 
     process.env.MAX_OUTPUT_TOKENS = "2500";
     expect(getMaxOutputTokens()).toBe(2500);
 
     process.env.MAX_OUTPUT_TOKENS = "invalid";
-    expect(getMaxOutputTokens()).toBe(1200);
+    expect(getMaxOutputTokens()).toBe(4000);
   });
 });
