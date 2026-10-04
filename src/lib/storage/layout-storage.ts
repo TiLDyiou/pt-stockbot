@@ -24,7 +24,7 @@ export interface DashboardLayout {
   widgets: DashboardWidget[];
 }
 
-export const DEFAULT_TICKERS = ["FPT", "VCB", "HPG", "MWG", "TCB"];
+export const DEFAULT_TICKERS: string[] = [];
 
 export const DEFAULT_LAYOUT: DashboardLayout = {
   version: 2,
@@ -130,7 +130,7 @@ export function loadWatchlist(customStorage?: Storage | null): string[] {
       .filter((t: string) => TICKER_REGEX.test(t))
       .slice(0, 20);
 
-    return validTickers.length > 0 ? validTickers : DEFAULT_TICKERS;
+    return validTickers;
   } catch {
     return DEFAULT_TICKERS;
   }

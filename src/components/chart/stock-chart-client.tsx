@@ -11,6 +11,7 @@ import {
 import type { CandleItem, ValuationRatios } from "@/lib/vnstock/types";
 import { calculateSMA, calculateNormalizedPercentage } from "./chart-utils";
 import { formatPrice, formatPercent, formatVolume } from "@/lib/utils/format";
+import { loadWatchlist } from "@/lib/storage/layout-storage";
 import {
   TrendingUpIcon,
   TrendingDownIcon,
@@ -44,24 +45,6 @@ const TIMEFRAME_DAYS: Record<Timeframe, number> = {
   "6M": 180,
   "1Y": 365,
 };
-
-interface CompareSuggestionItem {
-  symbol: string;
-  name: string;
-  exchange: string;
-  price?: number;
-  changePct?: number;
-}
-
-const POPULAR_COMPARE_TICKERS: CompareSuggestionItem[] = [
-  { symbol: "VNINDEX", name: "Chỉ số VN-Index", exchange: "HOSE" },
-  { symbol: "VN30", name: "Chỉ số VN30", exchange: "HOSE" },
-  { symbol: "HNX", name: "Chỉ số HNX-Index", exchange: "HNX" },
-  { symbol: "FPT", name: "Công ty Cổ phần FPT", exchange: "HOSE" },
-  { symbol: "HPG", name: "Tập đoàn Hòa Phát", exchange: "HOSE" },
-  { symbol: "VCB", name: "Vietcombank", exchange: "HOSE" },
-  { symbol: "SSI", name: "Chứng khoán SSI", exchange: "HOSE" },
-];
 
 export const COMPARE_PALETTE = [
   "#a855f7", // Tím
@@ -139,9 +122,21 @@ export default function StockChartClient({
   >([]);
   const [isSearchingCompare, setIsSearchingCompare] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
+  const [watchlistTickers, setWatchlistTickers] = useState<string[]>([]);
+  const swappingSymbolRef = useRef<string | null>(null);
 
   const compareInputRef = useRef<HTMLInputElement>(null);
   const compareContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isComparing) {
+      const list = loadWatchlist();
+      const filtered = list.filter(
+        (s) => s.toUpperCase() !== symbol.toUpperCase(),
+      );
+      setWatchlistTickers(filtered);
+    }
+  }, [isComparing, symbol]);
 
   useEffect(() => {
     if (isComparing && compareInputRef.current) {
@@ -577,6 +572,89 @@ export default function StockChartClient({
     setActiveComparisons((prev) => prev.filter((c) => c.symbol !== sym));
   };
 
+  const handleSwapComparisonWithPrimary = async (targetSymbol: string) => {
+    const oldPrimary = symbol;
+    if (!targetSymbol || targetSymbol === oldPrimary) return;
+
+    swappingSymbolRef.current = targetSymbol;
+
+    // 1. Remove targetSymbol series from Lightweight Chart
+    const targetSeries = compareSeriesMapRef.current.get(targetSymbol);
+    if (targetSeries && chartInstanceRef.current) {
+      try {
+        chartInstanceRef.current.removeSeries(targetSeries);
+      } catch (err) {
+        console.error("Lỗi gỡ bỏ series so sánh:", err);
+      }
+    }
+    compareSeriesMapRef.current.delete(targetSymbol);
+
+    // 2. Fetch or reuse candles of oldPrimary to create its comparison line series
+    let oldCandles = candles;
+    if (!oldCandles || oldCandles.length === 0) {
+      try {
+        const days = TIMEFRAME_DAYS[timeframe] || defaultDays;
+        const res = await fetch(
+          `/api/candles?symbol=${oldPrimary}&days=${days}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          oldCandles = data.candles || [];
+        }
+      } catch (err) {
+        console.error("Lỗi tải nến cho mã cũ khi hoán đổi:", err);
+      }
+    }
+
+    if (oldCandles && oldCandles.length > 0 && chartInstanceRef.current) {
+      const normData = calculateNormalizedPercentage(oldCandles);
+      const purpleColor = "#a855f7"; // Mã chính trước đó thành mã tím
+
+      const oldPrimarySeries = chartInstanceRef.current.addLineSeries({
+        color: purpleColor,
+        lineWidth: 2,
+        title: oldPrimary,
+        priceScaleId: "compare",
+      });
+
+      oldPrimarySeries.priceScale().applyOptions({
+        scaleMargins: { top: 0.1, bottom: 0.2 },
+      });
+
+      oldPrimarySeries.setData(
+        normData.map((d) => ({ time: d.time as any, value: d.value })),
+      );
+
+      compareSeriesMapRef.current.set(oldPrimary, oldPrimarySeries);
+    }
+
+    // 3. Update activeComparisons state: targetSymbol is removed, oldPrimary is added as purple
+    setActiveComparisons((prev) => {
+      const remaining = prev.filter((c) => c.symbol !== targetSymbol);
+      const updated = remaining.map((c) => {
+        if (c.color === "#a855f7") {
+          const nextColor =
+            COMPARE_PALETTE.find(
+              (col) =>
+                col !== "#a855f7" && !remaining.some((r) => r.color === col),
+            ) || "#06b6d4";
+          const s = compareSeriesMapRef.current.get(c.symbol);
+          if (s) {
+            s.applyOptions({ color: nextColor });
+          }
+          return { ...c, color: nextColor };
+        }
+        return c;
+      });
+      return [{ symbol: oldPrimary, color: "#a855f7" }, ...updated];
+    });
+
+    // 4. Notify parent to switch primary active symbol to targetSymbol
+    if (onSelectSymbol) {
+      onSelectSymbol(targetSymbol);
+    }
+  };
+
   // Re-synchronize all active comparison series when timeframe changes
   useEffect(() => {
     if (activeComparisons.length === 0 || !chartInstanceRef.current) return;
@@ -615,6 +693,10 @@ export default function StockChartClient({
 
   // Remove comparison if primary symbol becomes the compared symbol
   useEffect(() => {
+    if (swappingSymbolRef.current === symbol) {
+      swappingSymbolRef.current = null;
+      return;
+    }
     if (activeComparisons.some((c) => c.symbol === symbol)) {
       removeComparisonSymbol(symbol);
     }
@@ -661,9 +743,10 @@ export default function StockChartClient({
   };
 
   const handleCompareKeyDown = (e: React.KeyboardEvent) => {
-    const activeList = compareSymbol.trim()
-      ? compareSuggestions
-      : POPULAR_COMPARE_TICKERS.filter((t) => t.symbol !== symbol);
+    const isTyping = compareSymbol.trim().length > 0;
+    const activeCount = isTyping
+      ? compareSuggestions.length
+      : watchlistTickers.length;
 
     if (e.key === "Escape") {
       setIsComparing(false);
@@ -671,20 +754,30 @@ export default function StockChartClient({
       setCompareSuggestions([]);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedSuggestionIndex(
-        (prev) => (prev + 1) % (activeList.length || 1),
-      );
+      if (activeCount > 0) {
+        setSelectedSuggestionIndex((prev) => (prev + 1) % activeCount);
+      }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedSuggestionIndex(
-        (prev) => (prev - 1 + activeList.length) % (activeList.length || 1),
-      );
+      if (activeCount > 0) {
+        setSelectedSuggestionIndex(
+          (prev) => (prev - 1 + activeCount) % activeCount,
+        );
+      }
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (activeList[selectedSuggestionIndex]) {
-        selectComparisonSymbol(activeList[selectedSuggestionIndex].symbol);
-      } else if (compareSymbol.trim()) {
-        selectComparisonSymbol(compareSymbol.trim().toUpperCase());
+      if (isTyping) {
+        if (compareSuggestions[selectedSuggestionIndex]) {
+          selectComparisonSymbol(
+            compareSuggestions[selectedSuggestionIndex].symbol,
+          );
+        } else if (compareSymbol.trim()) {
+          selectComparisonSymbol(compareSymbol.trim().toUpperCase());
+        }
+      } else {
+        if (watchlistTickers[selectedSuggestionIndex]) {
+          selectComparisonSymbol(watchlistTickers[selectedSuggestionIndex]);
+        }
       }
     }
   };
@@ -794,15 +887,18 @@ export default function StockChartClient({
               {activeComparisons.map((comp) => (
                 <div
                   key={comp.symbol}
+                  onClick={() => handleSwapComparisonWithPrimary(comp.symbol)}
                   style={{ borderColor: `${comp.color}80` }}
-                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white/90 dark:bg-zinc-900/90 shadow-2xs shrink-0 transition-all hover:brightness-105"
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white/90 dark:bg-zinc-900/90 shadow-2xs shrink-0 cursor-pointer transition-all duration-150 hover:scale-105 hover:brightness-110 active:scale-95 select-none"
                 >
                   <span style={{ color: comp.color }}>{comp.symbol}</span>
                   <button
                     type="button"
-                    onClick={() => removeComparisonSymbol(comp.symbol)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeComparisonSymbol(comp.symbol);
+                    }}
                     className="text-slate-400 hover:text-rose-500 transition-colors ml-0.5 cursor-pointer"
-                    title={`Bỏ so sánh mã ${comp.symbol}`}
                   >
                     <XIcon size={12} animateOnHover />
                   </button>
@@ -831,6 +927,7 @@ export default function StockChartClient({
                     ref={compareInputRef}
                     type="text"
                     value={compareSymbol}
+                    placeholder="MÃ SO SÁNH..."
                     onChange={(e) => setCompareSymbol(e.target.value)}
                     onKeyDown={handleCompareKeyDown}
                     className="pl-2.5 pr-7 py-1 text-xs uppercase bg-white dark:bg-zinc-900 border border-emerald-500 rounded-lg w-40 focus:outline-none ring-1 ring-emerald-500 font-mono text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all shadow-xs"
@@ -846,112 +943,165 @@ export default function StockChartClient({
                 </div>
               </form>
 
-              {/* Suggestions Dropdown */}
-              <div
-                onMouseDown={(e) => e.preventDefault()}
-                className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#171718] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden"
-              >
-                <div className="px-2.5 py-1.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/60 text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                  <span>
-                    {compareSymbol.trim() ? "Gợi ý mã" : "Mã phổ biến"}
-                  </span>
-                  {isSearchingCompare && (
-                    <span className="animate-pulse">Đang tìm...</span>
-                  )}
-                </div>
+              {/* Suggestions Dropdown: Only shown if user is typing or if watchlist has tickers */}
+              {(compareSymbol.trim().length > 0 || watchlistTickers.length > 0) && (
+                <div
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#171718] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden"
+                >
+                  <div className="px-2.5 py-1.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/60 text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>
+                      {compareSymbol.trim() ? "Gợi ý mã" : "Mã trong danh mục"}
+                    </span>
+                    {isSearchingCompare && (
+                      <span className="animate-pulse">Đang tìm...</span>
+                    )}
+                  </div>
 
-                <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/40">
-                  {(compareSymbol.trim()
-                    ? compareSuggestions
-                    : POPULAR_COMPARE_TICKERS.filter((t) => t.symbol !== symbol)
-                  ).map((item, idx) => {
-                    const isSelected = idx === selectedSuggestionIndex;
-                    const hasPrice = item.price !== undefined;
-                    const isPositive = (item.changePct || 0) > 0;
-                    const isNegative = (item.changePct || 0) < 0;
+                  <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/40">
+                    {compareSymbol.trim() ? (
+                      compareSuggestions.length > 0 ? (
+                        compareSuggestions.map((item, idx) => {
+                          const isSelected = idx === selectedSuggestionIndex;
+                          const hasPrice = item.price !== undefined;
+                          const isPositive = (item.changePct || 0) > 0;
+                          const isNegative = (item.changePct || 0) < 0;
 
-                    const isAlreadyCompared = activeComparisons.some(
-                      (c) => c.symbol === item.symbol,
-                    );
-                    const comparedColor = activeComparisons.find(
-                      (c) => c.symbol === item.symbol,
-                    )?.color;
+                          const isAlreadyCompared = activeComparisons.some(
+                            (c) => c.symbol === item.symbol,
+                          );
+                          const comparedColor = activeComparisons.find(
+                            (c) => c.symbol === item.symbol,
+                          )?.color;
 
-                    return (
-                      <div
-                        key={item.symbol}
-                        onClick={() => {
-                          if (isAlreadyCompared) {
-                            removeComparisonSymbol(item.symbol);
-                          } else {
-                            selectComparisonSymbol(item.symbol);
-                          }
-                        }}
-                        onMouseEnter={() => setSelectedSuggestionIndex(idx)}
-                        className={`flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors ${
-                          isSelected
-                            ? "bg-emerald-50 dark:bg-emerald-950/30"
-                            : "hover:bg-slate-50 dark:hover:bg-zinc-800/40"
-                        }`}
-                      >
-                        <div className="flex flex-col min-w-0 mr-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold font-mono text-slate-900 dark:text-white text-xs">
-                              {item.symbol}
-                            </span>
-                            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
-                              {item.exchange}
-                            </span>
-                            {isAlreadyCompared && (
-                              <span
-                                style={{
-                                  backgroundColor: `${comparedColor}20`,
-                                  color: comparedColor,
-                                  borderColor: `${comparedColor}50`,
-                                }}
-                                className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border"
-                              >
-                                Đang so sánh
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
-                            {item.name}
-                          </span>
-                        </div>
-
-                        {hasPrice && (
-                          <div className="text-right font-mono shrink-0">
-                            <div className="font-bold text-slate-800 dark:text-zinc-200 text-[11px]">
-                              {formatPrice(item.price)}
-                            </div>
+                          return (
                             <div
-                              className={`text-[9px] font-semibold ${
-                                isPositive
-                                  ? "text-emerald-500"
-                                  : isNegative
-                                    ? "text-rose-500"
-                                    : "text-amber-500"
+                              key={item.symbol}
+                              onClick={() => {
+                                if (isAlreadyCompared) {
+                                  removeComparisonSymbol(item.symbol);
+                                } else {
+                                  selectComparisonSymbol(item.symbol);
+                                }
+                              }}
+                              onMouseEnter={() => setSelectedSuggestionIndex(idx)}
+                              className={`flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors ${
+                                isSelected
+                                  ? "bg-emerald-50 dark:bg-emerald-950/30"
+                                  : "hover:bg-slate-50 dark:hover:bg-zinc-800/40"
                               }`}
                             >
-                              {formatPercent(item.changePct)}
+                              <div className="flex flex-col min-w-0 mr-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold font-mono text-slate-900 dark:text-white text-xs">
+                                    {item.symbol}
+                                  </span>
+                                  {item.exchange && (
+                                    <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                                      {item.exchange}
+                                    </span>
+                                  )}
+                                  {isAlreadyCompared && (
+                                    <span
+                                      style={{
+                                        backgroundColor: `${comparedColor}20`,
+                                        color: comparedColor,
+                                        borderColor: `${comparedColor}50`,
+                                      }}
+                                      className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border"
+                                    >
+                                      Đang so sánh
+                                    </span>
+                                  )}
+                                </div>
+                                {item.name && (
+                                  <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
+                                    {item.name}
+                                  </span>
+                                )}
+                              </div>
+
+                              {hasPrice && (
+                                <div className="text-right font-mono shrink-0">
+                                  <div className="font-bold text-slate-800 dark:text-zinc-200 text-[11px]">
+                                    {formatPrice(item.price)}
+                                  </div>
+                                  <div
+                                    className={`text-[9px] font-semibold ${
+                                      isPositive
+                                        ? "text-emerald-500"
+                                        : isNegative
+                                          ? "text-rose-500"
+                                          : "text-amber-500"
+                                    }`}
+                                  >
+                                    {formatPercent(item.changePct)}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : !isSearchingCompare ? (
+                        <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-zinc-500">
+                          Nhấn Enter để thử so sánh với &quot;
+                          {compareSymbol.trim().toUpperCase()}&quot;
+                        </div>
+                      ) : null
+                    ) : (
+                      watchlistTickers.map((ticker, idx) => {
+                        const isSelected = idx === selectedSuggestionIndex;
+                        const isAlreadyCompared = activeComparisons.some(
+                          (c) => c.symbol === ticker,
+                        );
+                        const comparedColor = activeComparisons.find(
+                          (c) => c.symbol === ticker,
+                        )?.color;
+
+                        return (
+                          <div
+                            key={ticker}
+                            onClick={() => {
+                              if (isAlreadyCompared) {
+                                removeComparisonSymbol(ticker);
+                              } else {
+                                selectComparisonSymbol(ticker);
+                              }
+                            }}
+                            onMouseEnter={() => setSelectedSuggestionIndex(idx)}
+                            className={`flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors ${
+                              isSelected
+                                ? "bg-emerald-50 dark:bg-emerald-950/30"
+                                : "hover:bg-slate-50 dark:hover:bg-zinc-800/40"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold font-mono text-slate-900 dark:text-white text-xs">
+                                {ticker}
+                              </span>
+                              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                                {ticker === "HNX" ? "HNX" : ticker === "UPCOM" ? "UPCOM" : "HOSE"}
+                              </span>
+                              {isAlreadyCompared && (
+                                <span
+                                  style={{
+                                    backgroundColor: `${comparedColor}20`,
+                                    color: comparedColor,
+                                    borderColor: `${comparedColor}50`,
+                                  }}
+                                  className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border"
+                                >
+                                  Đang so sánh
+                                </span>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {compareSymbol.trim() &&
-                    !isSearchingCompare &&
-                    compareSuggestions.length === 0 && (
-                      <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-zinc-500">
-                        Nhấn Enter để thử so sánh với &quot;
-                        {compareSymbol.trim().toUpperCase()}&quot;
-                      </div>
+                        );
+                      })
                     )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <button

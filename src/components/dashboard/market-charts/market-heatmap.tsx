@@ -337,36 +337,6 @@ export function MarketHeatmap({
 
   return (
     <div className="relative w-full h-full flex flex-col min-h-0 overflow-y-auto">
-      {/* Legend Bar */}
-      <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-zinc-900/60 border-b border-slate-200/60 dark:border-zinc-800 text-[10px] font-mono shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-slate-500 dark:text-zinc-400 font-sans font-medium">
-            Quy ước màu:
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#a855f7] font-bold">
-            <span className="w-2.5 h-2.5 rounded-xs bg-[#a855f7]" /> Trần
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#22c55e] font-bold">
-            <span className="w-2.5 h-2.5 rounded-xs bg-[#22c55e]" /> Tăng
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#eab308] font-bold">
-            <span className="w-2.5 h-2.5 rounded-xs bg-[#eab308]" /> Tham chiếu
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#ea580c] font-bold">
-            <span className="w-2.5 h-2.5 rounded-xs bg-[#ea580c]" /> Giảm nhẹ
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#dc2626] font-bold">
-            <span className="w-2.5 h-2.5 rounded-xs bg-[#dc2626]" /> Giảm sâu
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#06b6d4] font-bold">
-            <span className="w-2.5 h-2.5 rounded-xs bg-[#06b6d4]" /> Sàn
-          </span>
-        </div>
-        <div className="text-slate-400 dark:text-zinc-500 hidden sm:block">
-          Nhấn để mở mã • Kéo vào Chat để phân tích AI
-        </div>
-      </div>
-
       {/* Main 5-Column Treemap Grid matching Screenshot Exactly */}
       <div className="p-1.5 sm:p-2 flex flex-col md:flex-row gap-1.5 flex-1 min-h-[380px] h-full">
         {/* Column 1: Tài chính (Financials - large left block ~36% width, full height) */}
