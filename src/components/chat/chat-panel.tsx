@@ -373,6 +373,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   }
                 }}
                 rows={1}
+                placeholder="Hỏi AI về cổ phiếu hoặc thị trường"
                 className="w-full resize-none border-none bg-transparent pl-3.5 pr-[72px] py-2 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
               />
             </div>

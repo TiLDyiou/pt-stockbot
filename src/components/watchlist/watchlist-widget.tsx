@@ -276,7 +276,7 @@ export function WatchlistWidget({
           <form onSubmit={handleAddTicker} className="flex items-center gap-1.5">
             <input
               type="text"
-              placeholder="+ Thêm mã (VD: SSI)"
+              placeholder="+ Thêm mã cổ phiếu"
               value={newTicker}
               onChange={(e) => setNewTicker(e.target.value)}
               className="px-3 py-1.5 text-xs uppercase bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-lg w-28 sm:w-32 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono text-slate-900 dark:text-white"

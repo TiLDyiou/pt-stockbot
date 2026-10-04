@@ -788,7 +788,7 @@ export default function StockChartClient({
                   <input
                     ref={compareInputRef}
                     type="text"
-                    placeholder="Nhập mã (VD: HPG)..."
+                    placeholder="Nhập mã so sánh"
                     value={compareSymbol}
                     onChange={(e) => setCompareSymbol(e.target.value)}
                     onKeyDown={handleCompareKeyDown}

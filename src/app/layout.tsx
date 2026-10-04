@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PhuocThinh Stockbot - Workspace Phân tích Cổ phiếu Việt Nam",
+  title: "PT Stockbot",
   description:
     "Workspace tương tác và trợ lý AI phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) với TradingView Lightweight Charts và drag-and-drop dashboard.",
   icons: {
