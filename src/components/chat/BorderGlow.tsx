@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback, useEffect, useState, type ReactNode } from 'react';
+import React, { useRef, useCallback, useEffect, type ReactNode } from 'react';
 import './BorderGlow.css';
 
 export interface BorderGlowProps {
@@ -85,7 +85,7 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
   className = '',
   edgeSensitivity = 30,
   glowColor = '40 80 80',
-  backgroundColor,
+  backgroundColor = '#120F17',
   borderRadius = 28,
   glowRadius = 40,
   glowIntensity = 1.0,
@@ -95,23 +95,6 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
   fillOpacity = 0.5,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isDark, setIsDark] = useState(true);
-
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      setIsDark(document.documentElement.classList.contains('dark'));
-      const observer = new MutationObserver(() => {
-        setIsDark(document.documentElement.classList.contains('dark'));
-      });
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class'],
-      });
-      return () => observer.disconnect();
-    }
-  }, []);
-
-  const effectiveBg = !isDark && backgroundColor === '#120F17' ? '#ffffff' : (backgroundColor || (isDark ? '#120F17' : '#ffffff'));
 
   const getCenterOfElement = useCallback((el: HTMLElement) => {
     const { width, height } = el.getBoundingClientRect();
@@ -155,22 +138,6 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
     card.style.setProperty('--cursor-angle', `${angle.toFixed(3)}deg`);
   }, [getEdgeProximity, getCursorAngle]);
 
-  const handleFocus = useCallback(() => {
-    const card = cardRef.current;
-    if (card) {
-      card.style.setProperty('--edge-proximity', '100');
-    }
-  }, []);
-
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-      const card = cardRef.current;
-      if (card) {
-        card.style.setProperty('--edge-proximity', '0');
-      }
-    }
-  }, []);
-
   useEffect(() => {
     if (!animated || !cardRef.current) return;
     const card = cardRef.current;
@@ -193,17 +160,15 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
   }, [animated]);
 
   const glowVars = buildGlowVars(glowColor, glowIntensity);
-  const lightSurface = isLightColor(effectiveBg);
+  const lightSurface = isLightColor(backgroundColor);
 
   return (
     <div
       ref={cardRef}
       onPointerMove={handlePointerMove}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
       className={`border-glow-card${lightSurface ? ' border-glow-card--light' : ''} ${className}`}
       style={{
-        '--card-bg': effectiveBg,
+        '--card-bg': backgroundColor,
         '--edge-sensitivity': edgeSensitivity,
         '--border-radius': `${borderRadius}px`,
         '--glow-padding': `${glowRadius}px`,
