@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET as getCandlesHandler } from "../app/api/candles/route";
 import { GET as getSparklineHandler } from "../app/api/sparkline/route";
 import { GET as getRatiosHandler } from "../app/api/ratios/route";
+import { POST as getRecommendationsHandler } from "../app/api/watchlist/recommendations/route";
 import * as vnstockClient from "../lib/vnstock/client";
 import { NextRequest } from "next/server";
 
@@ -98,6 +99,53 @@ describe("API Edge / Boundary Tests", () => {
       expect(data.pe).toBe(11.66);
       expect(data.pb).toBe(2.93);
       expect(data.ps).toBe(1.84);
+    });
+  });
+
+  describe("/api/watchlist/recommendations", () => {
+    it("returns 400 for empty or invalid symbols payload", async () => {
+      const req = new NextRequest("http://localhost:3000/api/watchlist/recommendations", {
+        method: "POST",
+        body: JSON.stringify({ symbols: [] }),
+      });
+      const res = await getRecommendationsHandler(req);
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain("không hợp lệ");
+    });
+
+    it("returns recommendations for valid symbols with fallback support", async () => {
+      vi.spyOn(vnstockClient, "getQuote").mockResolvedValue({
+        symbol: "FPT",
+        price: 62.1,
+        changePct: 1.5,
+        volume: 2000000,
+        ceiling: 67,
+        floor: 58,
+        reference: 61.2,
+        asOf: "2026-10-04T10:00:00.000Z",
+      });
+
+      vi.spyOn(vnstockClient, "getSparkline").mockResolvedValue(
+        Array.from({ length: 25 }, (_, i) => ({
+          date: `2026-09-${String(i + 1).padStart(2, "0")}`,
+          close: 50 + i * 0.5,
+        }))
+      );
+
+      const req = new NextRequest("http://localhost:3000/api/watchlist/recommendations", {
+        method: "POST",
+        body: JSON.stringify({ symbols: ["FPT"] }),
+      });
+
+      const res = await getRecommendationsHandler(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.recommendations).toBeDefined();
+      expect(data.recommendations.FPT).toBeDefined();
+      expect(["Mua", "Không mua", "Cần theo dõi"]).toContain(data.recommendations.FPT.action);
+      expect(typeof data.recommendations.FPT.rationale).toBe("string");
+      expect(data.recommendations.FPT.rationale.length).toBeGreaterThan(10);
     });
   });
 });

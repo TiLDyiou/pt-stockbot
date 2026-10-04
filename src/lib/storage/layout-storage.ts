@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   MODULES: "stockbot:v3:modules",
   MODULE_ORDER: "stockbot:v3:module_order",
   WATCHLIST: "stockbot:v1:watchlist",
+  RECOMMENDATIONS: "stockbot:v1:watchlist_recommendations",
   DISCLAIMER: "stockbot:v1:disclaimer",
   CHAT_HISTORY: "stockbot:v1:chat_history",
 } as const;
@@ -262,6 +263,50 @@ export function saveModuleOrder(
     store.setItem(STORAGE_KEYS.MODULE_ORDER, JSON.stringify(order));
     return true;
   } catch {
+    return false;
+  }
+}
+
+export type RecommendationAction = "Mua" | "Không mua" | "Cần theo dõi";
+
+export interface TickerRecommendation {
+  symbol: string;
+  action: RecommendationAction;
+  rationale: string;
+  updatedAt: number;
+}
+
+export type WatchlistRecommendations = Record<string, TickerRecommendation>;
+
+export function loadWatchlistRecommendations(
+  customStorage?: Storage | null
+): WatchlistRecommendations {
+  const store = getSafeStorage(customStorage);
+  if (!store) return {};
+
+  try {
+    const raw = store.getItem(STORAGE_KEYS.RECOMMENDATIONS);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed as WatchlistRecommendations;
+  } catch {
+    return {};
+  }
+}
+
+export function saveWatchlistRecommendations(
+  data: WatchlistRecommendations,
+  customStorage?: Storage | null
+): boolean {
+  const store = getSafeStorage(customStorage);
+  if (!store) return false;
+
+  try {
+    store.setItem(STORAGE_KEYS.RECOMMENDATIONS, JSON.stringify(data));
+    return true;
+  } catch (err) {
+    console.warn("Không thể lưu khuyến cáo vào storage:", err);
     return false;
   }
 }

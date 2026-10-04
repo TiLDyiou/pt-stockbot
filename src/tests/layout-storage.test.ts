@@ -11,6 +11,9 @@ import {
   saveModuleOrder,
   DEFAULT_MODULE_ORDER,
   ModuleId,
+  loadWatchlistRecommendations,
+  saveWatchlistRecommendations,
+  WatchlistRecommendations,
 } from "../lib/storage/layout-storage";
 
 // In-memory mock storage
@@ -152,5 +155,32 @@ describe("layout-storage", () => {
       watchlist: true,
       overview: false,
     });
+  });
+
+  it("loads and saves watchlist recommendations correctly", () => {
+    // Empty storage returns empty object
+    expect(loadWatchlistRecommendations(mockStorage)).toEqual({});
+
+    const mockRecs: WatchlistRecommendations = {
+      FPT: {
+        symbol: "FPT",
+        action: "Mua",
+        rationale: "Giá vượt SMA20 tích cực. RSI ổn định. Thích hợp mở vị thế mua.",
+        updatedAt: 1700000000000,
+      },
+      HPG: {
+        symbol: "HPG",
+        action: "Không mua",
+        rationale: "Áp lực điều chỉnh còn lớn. Nên quan sát bảo toàn vốn.",
+        updatedAt: 1700000000000,
+      },
+    };
+
+    saveWatchlistRecommendations(mockRecs, mockStorage);
+    expect(loadWatchlistRecommendations(mockStorage)).toEqual(mockRecs);
+
+    // Corrupted storage returns empty object
+    mockStorage.setItem(STORAGE_KEYS.RECOMMENDATIONS, "invalid-json");
+    expect(loadWatchlistRecommendations(mockStorage)).toEqual({});
   });
 });
