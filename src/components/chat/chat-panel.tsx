@@ -517,8 +517,8 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                 className={cn(
                   "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
                   messages.length > 0 && !isLoading
-                    ? "bg-rose-100 hover:bg-rose-200 dark:bg-rose-950 dark:hover:bg-rose-900 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800 cursor-pointer shadow-xs active:scale-95"
-                    : "opacity-30 cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-700",
+                    ? "bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95"
+                    : "bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
                 )}
                 title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
               >
