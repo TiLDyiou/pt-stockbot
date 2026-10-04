@@ -49,14 +49,12 @@ export function DashboardContainer({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Load layout on mount only
   useEffect(() => {
     const layout = loadDashboardLayout();
     setWidgets(layout.widgets);
     setIsMounted(true);
   }, []);
 
-  // Handle external trigger to add a chart
   useEffect(() => {
     if (!externalAddChartTicker || !isMounted) return;
     const sym = externalAddChartTicker.trim().toUpperCase();
@@ -108,7 +106,7 @@ export function DashboardContainer({
   };
 
   const handleResetLayout = () => {
-    if (confirm("Khôi phục bố cục mặc định của bảng điều khiển?")) {
+    if (confirm("Khôi phục bố cục mặc định?")) {
       setWidgets(DEFAULT_LAYOUT.widgets);
       saveDashboardLayout(DEFAULT_LAYOUT);
     }
@@ -166,98 +164,96 @@ export function DashboardContainer({
 
   if (!isMounted) {
     return (
-      <div className="flex items-center justify-center h-full text-xs text-slate-400">
+      <div className="flex items-center justify-center h-full text-xs text-slate-400 font-mono">
         Đang tải bảng điều khiển...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full rounded-2xl glass-surface overflow-hidden shadow-ambient-sm border border-black/[0.06] dark:border-white/[0.08]">
-      {/* Top Glass Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.05] dark:border-white/[0.07] bg-white/40 dark:bg-white/[0.02]">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-terminal-bg overflow-hidden select-none">
+      {/* Dashboard Sub-Toolbar (36px) */}
+      <div className="h-[38px] px-3 bg-white dark:bg-terminal-panel border-b border-slate-200 dark:border-terminal-border flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <span className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Bảng điều khiển
           </span>
-          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            {widgets.length} panels
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-terminal-subtle text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+            {widgets.length} panel
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsAddOpen(!isAddOpen)}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-ambient-sm transition-all duration-300 active:scale-[0.96]"
+            className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded transition-colors"
           >
-            <span>+ Thêm Panel</span>
+            + Thêm Panel
           </button>
           <button
             onClick={handleResetLayout}
-            className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] border border-black/[0.04] dark:border-white/[0.08] text-xs font-medium text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-[0.96]"
-            title="Khôi phục bố cục mặc định"
+            className="px-2.5 py-1 text-xs bg-slate-100 dark:bg-terminal-subtle hover:bg-slate-200 dark:hover:bg-terminal-hover text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 rounded transition-colors"
+            title="Khôi phục lại layout mặc định"
           >
             Khôi phục
           </button>
         </div>
       </div>
 
-      {/* Expanded Add Drawer */}
+      {/* Quick Add Bar */}
       {isAddOpen && (
-        <div className="p-3 bg-slate-50/90 dark:bg-[#0c1017] border-b border-black/[0.05] dark:border-white/[0.07] flex flex-wrap items-center gap-3 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="px-3 py-2 bg-slate-100 dark:bg-terminal-header border-b border-slate-200 dark:border-terminal-border flex flex-wrap items-center gap-2.5 text-xs animate-in fade-in duration-100">
           <form onSubmit={handleAddChart} className="flex items-center gap-1.5">
-            <span className="font-medium text-slate-600 dark:text-slate-300">
-              Biểu đồ:
-            </span>
+            <span className="font-medium text-slate-700 dark:text-slate-300">Mã:</span>
             <input
               type="text"
-              placeholder="Mã CP (HPG)"
+              placeholder="VD: HPG"
               value={newChartTicker}
               onChange={(e) => setNewChartTicker(e.target.value)}
-              className="px-2.5 py-1 text-xs uppercase bg-white dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.1] rounded-lg w-28 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+              className="px-2 py-1 text-xs uppercase bg-white dark:bg-terminal-panel border border-slate-300 dark:border-slate-700 rounded w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
             />
             <button
               type="submit"
               disabled={!newChartTicker.trim()}
-              className="px-2.5 py-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-medium disabled:opacity-40"
+              className="px-2.5 py-1 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 rounded font-medium disabled:opacity-40"
             >
-              Thêm
+              + Biểu đồ
             </button>
           </form>
 
-          <div className="h-4 w-px bg-slate-200 dark:bg-white/10" />
+          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
 
           <button
             onClick={() => handleAddWidgetType("watchlist")}
-            className="px-3 py-1 rounded-lg bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] border border-black/[0.05] dark:border-white/[0.08] text-slate-700 dark:text-slate-200"
+            className="px-2.5 py-1 bg-white dark:bg-terminal-panel hover:bg-slate-50 dark:hover:bg-terminal-hover border border-slate-300 dark:border-slate-700 rounded text-slate-700 dark:text-slate-300"
           >
             + Watchlist
           </button>
 
           <button
             onClick={() => handleAddWidgetType("market_overview")}
-            className="px-3 py-1 rounded-lg bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] border border-black/[0.05] dark:border-white/[0.08] text-slate-700 dark:text-slate-200"
+            className="px-2.5 py-1 bg-white dark:bg-terminal-panel hover:bg-slate-50 dark:hover:bg-terminal-hover border border-slate-300 dark:border-slate-700 rounded text-slate-700 dark:text-slate-300"
           >
-            + Tổng quan thị trường
+            + Thị trường
           </button>
 
           <button
             onClick={() => setIsAddOpen(false)}
-            className="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
           >
             Đóng
           </button>
         </div>
       )}
 
-      {/* Grid Content with Drag & Drop */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Grid Container */}
+      <div className="flex-1 overflow-y-auto p-3">
         {widgets.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <p className="text-slate-400 text-xs mb-3">Chưa có panel nào hiển thị</p>
+          <div className="flex flex-col items-center justify-center h-48 text-center">
+            <p className="text-slate-400 text-xs mb-2">Chưa có panel nào hiển thị</p>
             <button
               onClick={handleResetLayout}
-              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold"
+              className="px-3 py-1 bg-emerald-600 text-white text-xs rounded"
             >
               Khôi phục mặc định
             </button>
@@ -272,7 +268,7 @@ export function DashboardContainer({
               items={widgets.map((w) => w.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-12 gap-4">
+              <div className="grid grid-cols-12 gap-3">
                 {widgets.map((widget) => (
                   <SortableWidget
                     key={widget.id}

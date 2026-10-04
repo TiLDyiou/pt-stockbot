@@ -60,14 +60,14 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06] hover:border-emerald-500/30 dark:hover:border-emerald-500/40 hover:bg-slate-100/70 dark:hover:bg-white/[0.06] transition-all duration-200 text-xs"
+      className="flex items-center justify-between px-2.5 py-2 rounded bg-slate-50 dark:bg-terminal-subtle/50 hover:bg-slate-100 dark:hover:bg-terminal-hover border border-slate-200/60 dark:border-terminal-border/80 transition-colors text-xs"
     >
       {/* Drag handle & Symbol */}
       <div className="flex items-center gap-2">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1 py-0.5 rounded"
+          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-0.5"
           title="Kéo thả sắp xếp"
         >
           ⋮⋮
@@ -80,12 +80,13 @@ function SortableItem({
         </button>
       </div>
 
-      {/* Sparkline mini */}
+      {/* Sparkline */}
       <div
-        className="hidden sm:block cursor-pointer opacity-85 hover:opacity-100 transition-opacity"
+        className="hidden sm:block cursor-pointer"
         onClick={() => onSelect(symbol)}
+        title="Xem biểu đồ chi tiết"
       >
-        <SparklineSvg data={sparkline || []} width={75} height={20} />
+        <SparklineSvg data={sparkline || []} width={70} height={18} />
       </div>
 
       {/* Price & Change */}
@@ -96,7 +97,7 @@ function SortableItem({
               {formatPrice(quote.price)}
             </div>
             <div
-              className={`text-[10px] font-medium ${
+              className={`text-[11px] font-medium ${
                 isUp ? "text-emerald-500" : "text-rose-500"
               }`}
             >
@@ -112,7 +113,7 @@ function SortableItem({
             e.stopPropagation();
             onRemove(symbol);
           }}
-          className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all text-[11px]"
+          className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 text-xs transition-colors"
           title="Xóa khỏi watchlist"
         >
           ✕
@@ -134,18 +135,15 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Load from localStorage on client mount only
   useEffect(() => {
     const list = loadWatchlist();
     setTickers(list);
     setIsMounted(true);
   }, []);
 
-  // Fetch quotes and sparklines
   const fetchWatchlistData = useCallback(async (currentTickers: string[]) => {
     if (currentTickers.length === 0) return;
 
-    // 1. Fetch sparklines
     try {
       const res = await fetch(`/api/sparkline?symbols=${currentTickers.join(",")}`);
       if (res.ok) {
@@ -156,7 +154,6 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
       console.error("Lỗi tải sparklines:", err);
     }
 
-    // 2. Fetch quotes
     currentTickers.forEach(async (sym) => {
       try {
         const res = await fetch(`/api/quote?symbol=${sym}`);
@@ -222,21 +219,21 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
 
   if (!isMounted) {
     return (
-      <div className="p-4 text-center text-xs text-slate-400">
+      <div className="p-4 text-center text-xs text-slate-400 font-mono">
         Đang tải danh mục theo dõi...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full select-none">
+    <div className="flex flex-col h-full select-none text-xs">
       {/* Header & Add form */}
-      <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-black/[0.04] dark:border-white/[0.06]">
+      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-terminal-border">
         <div className="flex items-center gap-1.5">
           <span className="font-semibold text-xs tracking-wider uppercase text-slate-500">
-            Mục theo dõi
+            Theo dõi
           </span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400">
+          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-terminal-subtle text-slate-400">
             {tickers.length}/20
           </span>
         </div>
@@ -244,26 +241,26 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
         <form onSubmit={handleAddTicker} className="flex items-center gap-1">
           <input
             type="text"
-            placeholder="Mã CP (SSI)"
+            placeholder="Mã (VD: SSI)"
             value={newTicker}
             onChange={(e) => setNewTicker(e.target.value)}
-            className="px-2.5 py-1 text-xs uppercase bg-slate-100 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] rounded-lg w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            className="px-2 py-0.5 text-xs uppercase bg-slate-50 dark:bg-terminal-subtle border border-slate-200 dark:border-slate-700 rounded w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
           />
           <button
             type="submit"
             disabled={!newTicker.trim()}
-            className="w-6 h-6 flex items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs disabled:opacity-40 transition-all active:scale-[0.96]"
+            className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs disabled:opacity-40 transition-colors"
           >
             +
           </button>
         </form>
       </div>
 
-      {/* Tickers list sortable */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[340px]">
+      {/* Tickers list */}
+      <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 max-h-[340px]">
         {tickers.length === 0 ? (
-          <p className="text-center text-xs text-slate-400 py-8">
-            Danh mục đang trống. Thêm mã ở trên.
+          <p className="text-center text-xs text-slate-400 py-6">
+            Danh mục đang trống. Thêm mã vào ô trên.
           </p>
         ) : (
           <DndContext
