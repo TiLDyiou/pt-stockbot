@@ -96,7 +96,7 @@ function SortableItem({
       className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/40 border-b border-slate-100 dark:border-zinc-800/50 transition-colors text-xs cursor-pointer group last:border-b-0"
       onClick={() => onSelect(symbol)}
     >
-      {/* Drag handle, Symbol Monogram, & AI Recommendation Pill */}
+      {/* Drag handle, Symbol & AI Recommendation Pill */}
       <div className="flex items-center gap-2 sm:gap-2.5 min-w-[130px]">
         <button
           {...attributes}
@@ -115,12 +115,9 @@ function SortableItem({
             e.dataTransfer.setData("text/plain", symbol);
             e.dataTransfer.effectAllowed = "copy";
           }}
-          className="flex items-center gap-2 cursor-grab active:cursor-grabbing"
+          className="flex items-center cursor-grab active:cursor-grabbing"
           title={`Kéo mã ${symbol} vào biểu đồ hoặc khung chat`}
         >
-          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-zinc-200 shrink-0">
-            {symbol.slice(0, 3)}
-          </div>
           <div className="text-left font-mono">
             <span className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors block text-xs tracking-wider">
               {symbol}
