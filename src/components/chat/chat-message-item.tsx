@@ -6,7 +6,6 @@ import remarkGfm from "remark-gfm";
 import type { Message } from "ai";
 import { TrendingUpIcon } from "lucide-animated";
 import ThoughtLine from "./thought-line";
-import BorderGlow from "./BorderGlow";
 
 interface ChatMessageItemProps {
   message: Message;
@@ -129,99 +128,87 @@ export function ChatMessageItem({
         </div>
       ) : (
         hasContent && (
-          <BorderGlow
-            edgeSensitivity={30}
-            glowColor="40 80 80"
-            borderRadius={16}
-            glowRadius={30}
-            glowIntensity={1}
-            coneSpread={25}
-            animated={false}
-            colors={['#c084fc', '#f472b6', '#38bdf8']}
-            className="w-full max-w-[92%] md:max-w-[88%]"
-          >
-            <div className="p-4 text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-zinc-100">
-              <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ _node, ...props }: any) => (
-                      <h1 className="text-base font-bold text-slate-900 dark:text-white mt-3.5 mb-2 first:mt-0 tracking-tight" {...props} />
-                    ),
-                    h2: ({ _node, ...props }: any) => (
-                      <h2 className="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1.5 first:mt-0 tracking-tight" {...props} />
-                    ),
-                    h3: ({ _node, ...props }: any) => (
-                      <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-zinc-100 mt-2.5 mb-1 first:mt-0" {...props} />
-                    ),
-                    h4: ({ _node, ...props }: any) => (
-                      <h4 className="text-xs font-semibold text-slate-800 dark:text-zinc-200 mt-2 mb-1 first:mt-0" {...props} />
-                    ),
-                    p: ({ _node, ...props }: any) => (
-                      <p className="mb-2.5 last:mb-0 leading-relaxed text-slate-800 dark:text-zinc-200" {...props} />
-                    ),
-                    strong: ({ _node, ...props }: any) => (
-                      <strong className="font-semibold text-slate-900 dark:text-white" {...props} />
-                    ),
-                    ul: ({ _node, ...props }: any) => (
-                      <ul className="my-2.5 pl-4 space-y-1 list-disc list-outside marker:text-emerald-500 dark:marker:text-emerald-400" {...props} />
-                    ),
-                    ol: ({ _node, ...props }: any) => (
-                      <ol className="my-2.5 pl-4 space-y-1 list-decimal list-outside marker:text-slate-400 dark:marker:text-zinc-500 font-mono" {...props} />
-                    ),
-                    li: ({ _node, ...props }: any) => (
-                      <li className="pl-0.5 leading-relaxed text-slate-800 dark:text-zinc-200" {...props} />
-                    ),
-                    table: ({ _node, ...props }: any) => (
-                      <div className="overflow-x-auto my-3 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
-                        <table className="min-w-full divide-y divide-slate-200 dark:divide-zinc-800 text-xs text-left" {...props} />
-                      </div>
-                    ),
-                    thead: ({ _node, ...props }: any) => (
-                      <thead className="bg-slate-100/80 dark:bg-zinc-800/80" {...props} />
-                    ),
-                    th: ({ _node, ...props }: any) => (
-                      <th className="px-3.5 py-2 font-semibold text-slate-700 dark:text-zinc-300 text-[11px] uppercase tracking-wider" {...props} />
-                    ),
-                    tbody: ({ _node, ...props }: any) => (
-                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 bg-white dark:bg-[#171718]" {...props} />
-                    ),
-                    td: ({ _node, ...props }: any) => (
-                      <td className="px-3.5 py-2 text-slate-800 dark:text-zinc-200 font-mono text-[11px] tabular-nums" {...props} />
-                    ),
-                    blockquote: ({ _node, ...props }: any) => (
-                      <blockquote className="my-2.5 pl-3 border-l-2 border-emerald-500 italic text-slate-500 dark:text-zinc-400 text-xs leading-relaxed bg-slate-50/70 dark:bg-zinc-900/60 py-1.5 rounded-r-lg" {...props} />
-                    ),
-                    code: ({ _node, className, children, ...props }: any) => {
-                      const isInline = !className?.includes("language-");
-                      if (isInline) {
-                        return (
-                          <code className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] border border-slate-200/60 dark:border-zinc-700/60" {...props}>
-                            {children}
-                          </code>
-                        );
-                      }
+          <div className="w-full max-w-[92%] md:max-w-[88%] p-4 text-xs sm:text-sm leading-relaxed bg-white dark:bg-[#171718] text-slate-800 dark:text-zinc-100 border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl rounded-tl-xs shadow-xs">
+            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ _node, ...props }: any) => (
+                    <h1 className="text-base font-bold text-slate-900 dark:text-white mt-3.5 mb-2 first:mt-0 tracking-tight" {...props} />
+                  ),
+                  h2: ({ _node, ...props }: any) => (
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1.5 first:mt-0 tracking-tight" {...props} />
+                  ),
+                  h3: ({ _node, ...props }: any) => (
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-zinc-100 mt-2.5 mb-1 first:mt-0" {...props} />
+                  ),
+                  h4: ({ _node, ...props }: any) => (
+                    <h4 className="text-xs font-semibold text-slate-800 dark:text-zinc-200 mt-2 mb-1 first:mt-0" {...props} />
+                  ),
+                  p: ({ _node, ...props }: any) => (
+                    <p className="mb-2.5 last:mb-0 leading-relaxed text-slate-800 dark:text-zinc-200" {...props} />
+                  ),
+                  strong: ({ _node, ...props }: any) => (
+                    <strong className="font-semibold text-slate-900 dark:text-white" {...props} />
+                  ),
+                  ul: ({ _node, ...props }: any) => (
+                    <ul className="my-2.5 pl-4 space-y-1 list-disc list-outside marker:text-emerald-500 dark:marker:text-emerald-400" {...props} />
+                  ),
+                  ol: ({ _node, ...props }: any) => (
+                    <ol className="my-2.5 pl-4 space-y-1 list-decimal list-outside marker:text-slate-400 dark:marker:text-zinc-500 font-mono" {...props} />
+                  ),
+                  li: ({ _node, ...props }: any) => (
+                    <li className="pl-0.5 leading-relaxed text-slate-800 dark:text-zinc-200" {...props} />
+                  ),
+                  table: ({ _node, ...props }: any) => (
+                    <div className="overflow-x-auto my-3 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-2xs">
+                      <table className="min-w-full divide-y divide-slate-200 dark:divide-zinc-800 text-xs text-left" {...props} />
+                    </div>
+                  ),
+                  thead: ({ _node, ...props }: any) => (
+                    <thead className="bg-slate-100/80 dark:bg-zinc-800/80" {...props} />
+                  ),
+                  th: ({ _node, ...props }: any) => (
+                    <th className="px-3.5 py-2 font-semibold text-slate-700 dark:text-zinc-300 text-[11px] uppercase tracking-wider" {...props} />
+                  ),
+                  tbody: ({ _node, ...props }: any) => (
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 bg-white dark:bg-[#171718]" {...props} />
+                  ),
+                  td: ({ _node, ...props }: any) => (
+                    <td className="px-3.5 py-2 text-slate-800 dark:text-zinc-200 font-mono text-[11px] tabular-nums" {...props} />
+                  ),
+                  blockquote: ({ _node, ...props }: any) => (
+                    <blockquote className="my-2.5 pl-3 border-l-2 border-emerald-500 italic text-slate-500 dark:text-zinc-400 text-xs leading-relaxed bg-slate-50/70 dark:bg-zinc-900/60 py-1.5 rounded-r-lg" {...props} />
+                  ),
+                  code: ({ _node, className, children, ...props }: any) => {
+                    const isInline = !className?.includes("language-");
+                    if (isInline) {
                       return (
-                        <code className={className} {...props}>
+                        <code className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] border border-slate-200/60 dark:border-zinc-700/60" {...props}>
                           {children}
                         </code>
                       );
-                    },
-                    hr: ({ _node, ...props }: any) => (
-                      <hr className="my-3 border-slate-200/80 dark:border-zinc-800/80" {...props} />
-                    ),
-                  }}
-                >
-                  {displayContent}
-                </ReactMarkdown>
+                    }
+                    return (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                  hr: ({ _node, ...props }: any) => (
+                    <hr className="my-3 border-slate-200/80 dark:border-zinc-800/80" {...props} />
+                  ),
+                }}
+              >
+                {displayContent}
+              </ReactMarkdown>
 
-                {/* Pulsing emerald cursor while text is streaming */}
-                {isStreaming && !isThinking && (
-                  <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-500 animate-pulse align-middle rounded-xs" />
-                )}
-              </div>
+              {/* Pulsing emerald cursor while text is streaming */}
+              {isStreaming && !isThinking && (
+                <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-500 animate-pulse align-middle rounded-xs" />
+              )}
             </div>
-          </BorderGlow>
+          </div>
         )
       )}
 
