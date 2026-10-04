@@ -829,10 +829,10 @@ export default function StockChartClient({
               e.dataTransfer.setData("application/x-stock-ticker", symbol);
               e.dataTransfer.effectAllowed = "copy";
             }}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 -ml-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 cursor-grab active:cursor-grabbing transition-all group"
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 -ml-1 rounded-lg cursor-grab active:cursor-grabbing"
             title={`Kéo mã ${symbol} vào khung Chat để AI phân tích`}
           >
-            <span className="font-bold text-lg font-mono text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">
+            <span className="font-bold text-lg font-mono text-slate-900 dark:text-white">
               {symbol}
             </span>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 font-medium">
@@ -840,7 +840,7 @@ export default function StockChartClient({
             </span>
             <GripVerticalIcon
               size={13}
-              className="text-slate-400 dark:text-zinc-500 opacity-50 group-hover:opacity-100 group-hover:text-emerald-500 transition-opacity"
+              className="text-slate-400 dark:text-zinc-500 opacity-50"
             />
           </div>
         </div>
@@ -893,7 +893,7 @@ export default function StockChartClient({
                   key={comp.symbol}
                   onClick={() => handleSwapComparisonWithPrimary(comp.symbol)}
                   style={{ borderColor: `${comp.color}80` }}
-                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white/90 dark:bg-zinc-900/90 shadow-2xs shrink-0 cursor-pointer transition-all duration-150 hover:scale-105 hover:brightness-110 active:scale-95 select-none"
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white/90 dark:bg-zinc-900/90 shadow-2xs shrink-0 cursor-pointer select-none"
                 >
                   <span style={{ color: comp.color }}>{comp.symbol}</span>
                   <button
