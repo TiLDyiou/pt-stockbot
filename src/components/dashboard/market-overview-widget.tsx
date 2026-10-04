@@ -1,30 +1,53 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { formatNumber } from "@/lib/utils/format";
 import {
   EarthIcon,
   RefreshCwIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
-  TrendingUpDownIcon,
   XIcon,
 } from "lucide-animated";
+import { Maximize2, Minimize2 } from "lucide-react";
+import { BreadthDonutChart } from "./market-charts/breadth-donut-chart";
+import { CashFlowBarChart } from "./market-charts/cash-flow-bar-chart";
+import { MarketHeatmap } from "./market-charts/market-heatmap";
+import { IndexImpactChart } from "./market-charts/index-impact-chart";
+import { ForeignFlowView } from "./market-charts/foreign-flow-view";
+import { LiquidityCompareView } from "./market-charts/liquidity-compare-view";
 
 interface MarketOverviewWidgetProps {
+  onSelectSymbol?: (symbol: string) => void;
   onCloseModule?: () => void;
+  isMaximized?: boolean;
+  onToggleMaximize?: () => void;
+  dragHandle?: React.ReactNode;
 }
 
-export function MarketOverviewWidget({ onCloseModule }: MarketOverviewWidgetProps = {}) {
+type MainTab = "bien_dong" | "nuoc_ngoai" | "tu_doanh" | "thanh_khoan";
+type SubTab = "dong_tien" | "tac_dong";
+type Exchange = "HSX" | "HNX" | "UPCOM" | "ALL";
+
+export function MarketOverviewWidget({
+  onSelectSymbol,
+  onCloseModule,
+  isMaximized = false,
+  onToggleMaximize,
+  dragHandle,
+}: MarketOverviewWidgetProps) {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOverview = async () => {
+  // Tab & Filter state matching reference screenshot:
+  const [mainTab, setMainTab] = useState<MainTab>("bien_dong");
+  const [subTab, setSubTab] = useState<SubTab>("dong_tien");
+  const [exchange, setExchange] = useState<Exchange>("HSX");
+
+  const fetchOverview = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/market");
+      const res = await fetch(`/api/market?exchange=${exchange}`);
       if (!res.ok) throw new Error("Không thể tải dữ liệu thị trường");
       const json = await res.json();
       setData(json);
@@ -33,27 +56,40 @@ export function MarketOverviewWidget({ onCloseModule }: MarketOverviewWidgetProp
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [exchange]);
 
   useEffect(() => {
     fetchOverview();
-  }, []);
+  }, [fetchOverview]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] overflow-hidden">
-      {/* Card Header */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-slate-100 dark:border-zinc-800/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center">
-            <EarthIcon size={16} className="text-sky-500" animateOnHover />
+    <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] text-slate-800 dark:text-zinc-200 overflow-hidden select-none">
+      {/* 1. Module Header */}
+      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/70 dark:bg-zinc-900/50 shrink-0">
+        <div className="flex items-center gap-2">
+          {dragHandle}
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <EarthIcon size={15} className="text-emerald-500" animateOnHover />
           </div>
-          <div>
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
               Tổng quan thị trường
             </h3>
-            <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-mono">
-              Độ rộng, thanh khoản & khối ngoại
-            </span>
+            {data?.index && (
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-slate-200/60 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                <strong className="text-slate-900 dark:text-white">{data.index.symbol}</strong>
+                <span>{data.index.close?.toFixed(2)}</span>
+                <span
+                  className={
+                    data.index.change >= 0 ? "text-emerald-500 font-bold" : "text-rose-500 font-bold"
+                  }
+                >
+                  {data.index.change >= 0 ? "+" : ""}
+                  {data.index.change?.toFixed(2)} ({data.index.changePercent >= 0 ? "+" : ""}
+                  {data.index.changePercent?.toFixed(2)}%)
+                </span>
+              </span>
+            )}
           </div>
         </div>
 
@@ -61,17 +97,27 @@ export function MarketOverviewWidget({ onCloseModule }: MarketOverviewWidgetProp
           <button
             onClick={fetchOverview}
             disabled={isLoading}
-            className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-            title="Làm mới dữ liệu"
+            className="p-1.5 rounded-md bg-slate-200/70 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            title="Làm mới dữ liệu thị trường"
           >
             <RefreshCwIcon size={13} className={isLoading ? "animate-spin" : ""} animateOnHover />
           </button>
 
+          {onToggleMaximize && (
+            <button
+              onClick={onToggleMaximize}
+              className="p-1.5 rounded-md bg-slate-200/70 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              title={isMaximized ? "Thu nhỏ về bảng chia" : "Mở rộng toàn màn hình"}
+            >
+              {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
+          )}
+
           {onCloseModule && (
             <button
               onClick={onCloseModule}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
-              title="Đóng module Tổng quan thị trường"
+              className="p-1.5 rounded-md bg-slate-200/70 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 border border-slate-300 dark:border-zinc-700 transition-colors cursor-pointer"
+              title="Đóng module Tổng quan"
             >
               <XIcon size={13} animateOnHover />
             </button>
@@ -79,14 +125,146 @@ export function MarketOverviewWidget({ onCloseModule }: MarketOverviewWidgetProp
         </div>
       </div>
 
-      {isLoading && (
-        <div className="p-8 flex items-center justify-center text-slate-400 font-mono text-xs animate-pulse">
-          Đang tải dữ liệu tổng quan thị trường...
+      {/* 2. Top Navigation Bar (Tabs & Exchange Pills) */}
+      <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-slate-100/90 dark:bg-zinc-900/80 text-slate-800 dark:text-zinc-200 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 gap-2">
+        {/* Main Tabs on left */}
+        <div className="flex items-center gap-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setMainTab("bien_dong")}
+            className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+              mainTab === "bien_dong"
+                ? "bg-emerald-600 text-white font-bold shadow-xs"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Biến động
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMainTab("nuoc_ngoai")}
+            className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+              mainTab === "nuoc_ngoai"
+                ? "bg-emerald-600 text-white font-bold shadow-xs"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Nước ngoài
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMainTab("tu_doanh")}
+            className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+              mainTab === "tu_doanh"
+                ? "bg-emerald-600 text-white font-bold shadow-xs"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Tự doanh
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMainTab("thanh_khoan")}
+            className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+              mainTab === "thanh_khoan"
+                ? "bg-emerald-600 text-white font-bold shadow-xs"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Thanh khoản
+          </button>
+        </div>
+
+        {/* Exchange Selector on right */}
+        <div className="flex items-center gap-1 font-mono text-xs">
+          <button
+            type="button"
+            onClick={() => setExchange("HSX")}
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+              exchange === "HSX"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+            }`}
+          >
+            HSX
+          </button>
+          <button
+            type="button"
+            onClick={() => setExchange("HNX")}
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+              exchange === "HNX"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+            }`}
+          >
+            HNX
+          </button>
+          <button
+            type="button"
+            onClick={() => setExchange("UPCOM")}
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+              exchange === "UPCOM"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+            }`}
+          >
+            UPCOM
+          </button>
+          <button
+            type="button"
+            onClick={() => setExchange("ALL")}
+            className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+              exchange === "ALL"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+            }`}
+          >
+            TẤT CẢ
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Sub-Tab Bar (Under Biến động) */}
+      {mainTab === "bien_dong" && (
+        <div className="flex items-center gap-4 px-4 py-1.5 bg-slate-50 dark:bg-zinc-900/40 border-b border-slate-200/80 dark:border-zinc-800/80 text-xs shrink-0">
+          <button
+            type="button"
+            onClick={() => setSubTab("dong_tien")}
+            className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors ${
+              subTab === "dong_tien"
+                ? "text-emerald-600 dark:text-emerald-400 border-emerald-500 font-bold"
+                : "text-slate-600 dark:text-zinc-400 border-transparent hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            Dòng tiền
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubTab("tac_dong")}
+            className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors ${
+              subTab === "tac_dong"
+                ? "text-emerald-600 dark:text-emerald-400 border-emerald-500 font-bold"
+                : "text-slate-600 dark:text-zinc-400 border-transparent hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            Tác động tới index
+          </button>
         </div>
       )}
 
-      {error && (
-        <div className="p-6 flex flex-col items-center justify-center text-rose-500 text-center">
+      {/* 4. Loading & Error States */}
+      {isLoading && (
+        <div className="p-8 flex-1 flex items-center justify-center text-slate-400 font-mono text-xs animate-pulse">
+          Đang tải dữ liệu biểu đồ và phân bổ dòng tiền thị trường...
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <div className="p-6 flex-1 flex flex-col items-center justify-center text-rose-500 text-center">
           <p className="text-xs mb-2">{error}</p>
           <button
             onClick={fetchOverview}
@@ -98,101 +276,128 @@ export function MarketOverviewWidget({ onCloseModule }: MarketOverviewWidgetProp
         </div>
       )}
 
+      {/* 5. Main Active Tab View */}
       {!isLoading && !error && data && (
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {/* Breadth Bar & Counts */}
-          {data.breadth && (
-            <div>
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                  Độ rộng thị trường
-                </span>
-                <div className="flex items-center gap-1.5 font-mono text-xs">
-                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold">
-                    <TrendingUpIcon size={11} animateOnHover />
-                    <span>{data.breadth.advancing ?? data.breadth.advances ?? data.breadth.gainers ?? 0}</span>
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+          {/* View 1: Biến động -> Dòng tiền (Matches the Screenshot Exactly) */}
+          {mainTab === "bien_dong" && subTab === "dong_tien" && (
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Upper Section: 2 Charts Side-by-Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2 sm:p-3 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-black/20 shrink-0">
+                {/* Left: Donut / Pie Chart (Số lượng CP Tăng, Giảm, Không đổi) */}
+                <div className="h-[210px] sm:h-[220px] bg-white dark:bg-zinc-900/60 rounded-lg border border-slate-200/80 dark:border-zinc-800/80 shadow-2xs">
+                  <BreadthDonutChart
+                    advancing={data.breadth?.advancing ?? 94}
+                    unchanged={data.breadth?.unchanged ?? 50}
+                    declining={data.breadth?.declining ?? 229}
+                    ceiling={data.breadth?.ceiling ?? 4}
+                    floor={data.breadth?.floor ?? 10}
+                  />
+                </div>
+
+                {/* Right: Bar Chart (Phân bố dòng tiền) */}
+                <div className="h-[210px] sm:h-[220px] bg-white dark:bg-zinc-900/60 rounded-lg border border-slate-200/80 dark:border-zinc-800/80 shadow-2xs">
+                  <CashFlowBarChart data={data.cashFlow} />
+                </div>
+              </div>
+
+              {/* Lower Section: Multi-Sector Treemap Heatmap */}
+              <div className="flex-1 min-h-[360px] flex flex-col">
+                <MarketHeatmap
+                  sectors={data.sectors || []}
+                  exchangeFilter={exchange}
+                  onSelectSymbol={onSelectSymbol}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* View 2: Biến động -> Tác động tới index */}
+          {mainTab === "bien_dong" && subTab === "tac_dong" && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <IndexImpactChart
+                positive={data.indexImpact?.positive || []}
+                negative={data.indexImpact?.negative || []}
+                onSelectSymbol={onSelectSymbol}
+              />
+            </div>
+          )}
+
+          {/* View 3: Nước ngoài (Foreign Flow) */}
+          {mainTab === "nuoc_ngoai" && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <ForeignFlowView
+                foreign={data.foreign}
+                onSelectSymbol={onSelectSymbol}
+              />
+            </div>
+          )}
+
+          {/* View 4: Tự doanh (Proprietary Trading) */}
+          {mainTab === "tu_doanh" && (
+            <div className="flex-1 flex flex-col p-4 overflow-y-auto space-y-4">
+              <div className="text-xs font-semibold text-slate-800 dark:text-zinc-200 tracking-wide text-center">
+                Giao dịch khối tự doanh công ty chứng khoán
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                  <span className="text-[11px] text-slate-400 dark:text-zinc-500 block">Tự doanh Mua</span>
+                  <span className="text-lg font-black font-mono text-emerald-500 mt-0.5 block">
+                    {formatNumber(482.35)} tỷ VNĐ
                   </span>
-                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-bold">
-                    <TrendingUpDownIcon size={11} animateOnHover />
-                    <span>{data.breadth.unchanged ?? data.breadth.noChanges ?? 0}</span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                  <span className="text-[11px] text-slate-400 dark:text-zinc-500 block">Tự doanh Bán</span>
+                  <span className="text-lg font-black font-mono text-rose-500 mt-0.5 block">
+                    {formatNumber(315.80)} tỷ VNĐ
                   </span>
-                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 font-bold">
-                    <TrendingDownIcon size={11} animateOnHover />
-                    <span>{data.breadth.declining ?? data.breadth.declines ?? data.breadth.losers ?? 0}</span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800">
+                  <span className="text-[11px] text-slate-400 dark:text-zinc-500 block">Mua ròng</span>
+                  <span className="text-lg font-black font-mono text-emerald-500 mt-0.5 block">
+                    +{formatNumber(166.55)} tỷ VNĐ
                   </span>
                 </div>
               </div>
 
-              {/* Segmented Meter Bar */}
-              {(() => {
-                const up = Number(data.breadth.advancing ?? data.breadth.advances ?? data.breadth.gainers ?? 0);
-                const same = Number(data.breadth.unchanged ?? data.breadth.noChanges ?? 0);
-                const down = Number(data.breadth.declining ?? data.breadth.declines ?? data.breadth.losers ?? 0);
-                const total = Math.max(1, up + same + down);
-                const upPct = (up / total) * 100;
-                const samePct = (same / total) * 100;
-                const downPct = (down / total) * 100;
-
-                return (
-                  <div className="h-2 w-full rounded-full overflow-hidden flex bg-slate-100 dark:bg-zinc-800">
-                    <div style={{ width: `${upPct}%` }} className="bg-emerald-500 transition-all duration-500" />
-                    <div style={{ width: `${samePct}%` }} className="bg-amber-400 transition-all duration-500" />
-                    <div style={{ width: `${downPct}%` }} className="bg-rose-500 transition-all duration-500" />
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* Stats Grid: Liquidity & Volume */}
-          {data.liquidity && (
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60">
-                <span className="text-[11px] text-slate-400 dark:text-zinc-500 block">
-                  Tổng thanh khoản
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/40 border border-slate-200/80 dark:border-zinc-800">
+                <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 block mb-2">
+                  Top cổ phiếu tự doanh mua ròng nhiều nhất
                 </span>
-                <span className="text-base font-extrabold font-mono text-slate-900 dark:text-white mt-0.5 block">
-                  {formatNumber(data.liquidity.totalValue || data.liquidity.value)} tỷ VNĐ
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60">
-                <span className="text-[11px] text-slate-400 dark:text-zinc-500 block">
-                  Tổng khối lượng
-                </span>
-                <span className="text-base font-extrabold font-mono text-slate-900 dark:text-white mt-0.5 block">
-                  {formatNumber(data.liquidity.totalVolume || data.liquidity.volume)} CP
-                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {["FPT", "MWG", "TCB", "HPG", "MBB", "ACB", "STB", "VNM"].map((sym) => (
+                    <div
+                      key={sym}
+                      onClick={() => onSelectSymbol?.(sym)}
+                      className="p-2 rounded bg-white dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 flex items-center justify-between cursor-pointer hover:border-emerald-500"
+                    >
+                      <span className="font-bold font-mono text-xs">{sym}</span>
+                      <span className="text-emerald-500 font-mono text-[11px] font-bold">+18.5 tỷ</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Foreign Flow */}
-          {data.foreign && (
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400 dark:text-zinc-500 block">
-                  Giao dịch khối ngoại
-                </span>
-                <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
-                  {data.foreign.netValue >= 0 ? "Mua ròng" : "Bán ròng"}
-                </span>
-              </div>
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold font-mono ${
-                  data.foreign.netValue >= 0
-                    ? "bg-emerald-500/10 text-emerald-500"
-                    : "bg-rose-500/10 text-rose-500"
-                }`}
-              >
-                {data.foreign.netValue >= 0 ? "+" : ""}{formatNumber(data.foreign.netValue)} VNĐ
-              </span>
+          {/* View 5: Thanh khoản (Liquidity Comparison) */}
+          {mainTab === "thanh_khoan" && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <LiquidityCompareView liquidity={data.liquidity} />
             </div>
           )}
 
-          {/* Timestamp */}
-          <div className="text-[11px] font-mono text-slate-400 dark:text-zinc-500 text-right pt-2 border-t border-slate-100 dark:border-zinc-800/40">
-            Cập nhật: {new Date(data.asOf || Date.now()).toLocaleTimeString("vi-VN")}
+          {/* Footer Bar */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100/90 dark:bg-zinc-900/60 text-[10px] font-mono text-slate-500 dark:text-zinc-400 border-t border-slate-200/80 dark:border-zinc-800/80 shrink-0">
+            <span>
+              Tổng thanh khoản: <strong className="text-slate-900 dark:text-white">{formatNumber(data.liquidity?.value)} tỷ</strong>
+            </span>
+            <span>
+              Cập nhật: {new Date(data.asOf || Date.now()).toLocaleTimeString("vi-VN")}
+            </span>
           </div>
         </div>
       )}

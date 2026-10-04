@@ -78,7 +78,15 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
 
+  const isStockTickerDrag = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/x-dashboard-module")) {
+      return false;
+    }
+    return e.dataTransfer.types.includes("application/x-stock-ticker");
+  };
+
   const handleDragEnter = (e: React.DragEvent) => {
+    if (!isStockTickerDrag(e)) return;
     e.preventDefault();
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) {
@@ -87,11 +95,13 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (!isStockTickerDrag(e)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/x-dashboard-module")) return;
     e.preventDefault();
     dragCounterRef.current -= 1;
     if (dragCounterRef.current <= 0) {
@@ -105,12 +115,22 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     dragCounterRef.current = 0;
     setIsDraggingOver(false);
 
-    const raw =
-      e.dataTransfer.getData("application/x-stock-ticker") ||
-      e.dataTransfer.getData("text/plain");
+    if (e.dataTransfer.types.includes("application/x-dashboard-module")) {
+      return;
+    }
 
+    const raw = e.dataTransfer.getData("application/x-stock-ticker");
     if (!raw) return;
-    const ticker = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+    const lower = raw.trim().toLowerCase();
+    if (["chart", "watchlist", "overview", "quick_quote"].includes(lower)) {
+      return;
+    }
+
+    const ticker = raw
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
     if (ticker.length >= 2 && ticker.length <= 10) {
       const promptText = `Phân tích chi tiết mã cổ phiếu ${ticker}`;
       setInput(promptText);
@@ -166,7 +186,10 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
         version: 1,
         messages: messages.slice(-50),
       };
-      localStorage.setItem(STORAGE_KEYS.CHAT_HISTORY, JSON.stringify(dataToSave));
+      localStorage.setItem(
+        STORAGE_KEYS.CHAT_HISTORY,
+        JSON.stringify(dataToSave),
+      );
     } catch (err) {
       console.warn("Không thể lưu lịch sử chat:", err);
     }
@@ -189,7 +212,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   const handleClearHistory = () => {
     if (messages.length === 0) return;
     const confirmed = window.confirm(
-      "CẢNH BÁO: Toàn bộ lịch sử trò chuyện và phân tích sẽ bị xóa vĩnh viễn.\n\nBạn có chắc chắn muốn xóa không?"
+      "CẢNH BÁO: Toàn bộ lịch sử trò chuyện và phân tích sẽ bị xóa vĩnh viễn.\n\nBạn có chắc chắn muốn xóa không?",
     );
     if (confirmed) {
       setMessages([]);
@@ -218,7 +241,8 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       onDrop={handleDrop}
       className={cn(
         "relative flex flex-col h-full bg-slate-50/50 dark:bg-[#0c0c0e] border-r border-slate-200/80 dark:border-zinc-800/80 select-none transition-colors",
-        isDraggingOver && "ring-2 ring-inset ring-emerald-500/60 bg-emerald-50/5 dark:bg-emerald-950/10"
+        isDraggingOver &&
+          "ring-2 ring-inset ring-emerald-500/60 bg-emerald-50/5 dark:bg-emerald-950/10",
       )}
     >
       {/* Message List */}
@@ -230,13 +254,18 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 border border-emerald-500/20">
-              <BotMessageSquareIcon size={24} className="text-emerald-500" animateOnHover />
+              <BotMessageSquareIcon
+                size={24}
+                className="text-emerald-500"
+                animateOnHover
+              />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
               Phân tích Chứng khoán Thông minh
             </h3>
             <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xs mb-5 leading-relaxed">
-              Trợ lý tự động gọi tools lấy giá, lịch sử nến, RSI, MACD, báo cáo tài chính và bối cảnh thị trường.
+              Trợ lý tự động gọi tools lấy giá, lịch sử nến, RSI, MACD, báo cáo
+              tài chính và bối cảnh thị trường.
             </p>
 
             <div className="flex flex-col gap-2 w-full max-w-xs">
@@ -247,7 +276,11 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#171718] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800/80 text-xs text-left text-slate-800 dark:text-zinc-200 transition-all shadow-xs hover:border-slate-300 dark:hover:border-zinc-700"
                 >
                   <span className="font-medium">{prompt}</span>
-                  <ArrowRightIcon size={14} className="float-right text-emerald-500 mt-0.5" animateOnHover />
+                  <ArrowRightIcon
+                    size={14}
+                    className="float-right text-emerald-500 mt-0.5"
+                    animateOnHover
+                  />
                 </button>
               ))}
             </div>
@@ -276,7 +309,11 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                 <div className="w-full max-w-[92%] md:max-w-[88%] mb-2 px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-zinc-900/90 border border-emerald-500/30 dark:border-emerald-500/30 shadow-xs">
                   <ThoughtLine
                     working={true}
-                    steps={["Đang phân tích câu hỏi…", "Đang truy vấn dữ liệu nguồn…", "Đang soạn thảo câu trả lời…"]}
+                    steps={[
+                      "Đang phân tích câu hỏi…",
+                      "Đang truy vấn dữ liệu nguồn…",
+                      "Đang soạn thảo câu trả lời…",
+                    ]}
                     label="Đang suy nghĩ…"
                     doneLabel="Đã suy nghĩ trong"
                     glyph="sparkle"
@@ -305,14 +342,16 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
               "relative flex w-full cursor-text items-center rounded-2xl text-left transition-all duration-200",
               "bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/90 dark:border-zinc-800/90",
               "ring-1 ring-black/5 dark:ring-white/5",
-              isFocused && "ring-2 ring-emerald-500/30 border-emerald-500/50 dark:border-emerald-500/50 shadow-xs",
-              isDraggingOver && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-md"
+              isFocused &&
+                "ring-2 ring-emerald-500/30 border-emerald-500/50 dark:border-emerald-500/50 shadow-xs",
+              isDraggingOver &&
+                "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-md",
             )}
             onClick={handleContainerClick}
           >
             {isDraggingOver && (
               <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-950/90 backdrop-blur-xs border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
-                <span>🎯 Thả mã vào đây để tạo prompt phân tích</span>
+                <span>Thả mã vào đây để tạo prompt phân tích</span>
               </div>
             )}
             <div className="w-full max-h-[180px] overflow-y-auto">
@@ -347,7 +386,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
                   messages.length > 0 && !isLoading
                     ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 cursor-pointer shadow-xs active:scale-95"
-                    : "opacity-25 cursor-not-allowed bg-rose-500/5 text-rose-400/60 border border-transparent"
+                    : "opacity-25 cursor-not-allowed bg-rose-500/5 text-rose-400/60 border border-transparent",
                 )}
                 title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
               >
@@ -372,7 +411,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                     "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
                     input.trim()
                       ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer active:scale-95"
-                      : "bg-slate-200/60 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
+                      : "bg-slate-200/60 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
                   )}
                   title="Gửi câu hỏi"
                 >

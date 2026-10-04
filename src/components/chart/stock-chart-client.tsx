@@ -33,6 +33,7 @@ interface StockChartClientProps {
   isMaximized?: boolean;
   onToggleMaximize?: () => void;
   onCloseModule?: () => void;
+  dragHandle?: React.ReactNode;
 }
 
 type Timeframe = "1M" | "3M" | "6M" | "1Y";
@@ -61,6 +62,17 @@ const POPULAR_COMPARE_TICKERS: CompareSuggestionItem[] = [
   { symbol: "SSI", name: "Chứng khoán SSI", exchange: "HOSE" },
 ];
 
+export const COMPARE_PALETTE = [
+  "#a855f7", // Tím
+  "#06b6d4", // Xanh lơ (Cyan)
+  "#f97316", // Cam tươi
+  "#ec4899", // Hồng sen
+  "#14b8a6", // Teal / Xanh mòng két
+  "#eab308", // Vàng hổ phách
+  "#3b82f6", // Xanh dương
+  "#84cc16", // Xanh chanh
+];
+
 export default function StockChartClient({
   symbol,
   defaultDays = 120,
@@ -72,6 +84,7 @@ export default function StockChartClient({
   isMaximized = false,
   onToggleMaximize,
   onCloseModule,
+  dragHandle,
 }: StockChartClientProps) {
   const chartWrapperRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -81,7 +94,7 @@ export default function StockChartClient({
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const sma20SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const sma50SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const compareSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const compareSeriesMapRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   const prevCloseMapRef = useRef<Map<string, number>>(new Map());
 
   const [timeframe, setTimeframe] = useState<Timeframe>("6M");
@@ -104,9 +117,12 @@ export default function StockChartClient({
     changePct?: number;
   } | null>(null);
 
-  // Comparison symbol & suggestions
+  // Multi-ticker Comparison state & suggestions
   const [compareSymbol, setCompareSymbol] = useState("");
-  const [activeCompareSymbol, setActiveCompareSymbol] = useState<string | null>(null);
+  const [activeComparisons, setActiveComparisons] = useState<
+    Array<{ symbol: string; color: string }>
+  >([]);
+  const [isDragOverChart, setIsDragOverChart] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [compareSuggestions, setCompareSuggestions] = useState<
@@ -406,6 +422,7 @@ export default function StockChartClient({
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener("change", handleMediaChange);
       }
+      compareSeriesMapRef.current.clear();
       chart.remove();
       chartInstanceRef.current = null;
     };
@@ -476,36 +493,48 @@ export default function StockChartClient({
     const sym = (overrideSymbol || compareSymbol).trim().toUpperCase();
     if (!sym || sym === symbol) return;
 
+    if (activeComparisons.some((c) => c.symbol === sym)) {
+      return; // Đã có trong danh sách so sánh
+    }
+
     setCompareLoading(true);
     try {
       const days = TIMEFRAME_DAYS[timeframe] || defaultDays;
       const res = await fetch(`/api/candles?symbol=${sym}&days=${days}`);
-      if (!res.ok) throw new Error("Không tải được mã so sánh");
+      if (!res.ok) throw new Error("Không tải được mã so sánh " + sym);
       const data = await res.json();
       const compCandles = data.candles as CandleItem[];
 
       if (!compCandles || compCandles.length === 0) {
-        throw new Error("Không có dữ liệu so sánh");
+        throw new Error("Không có dữ liệu nến cho mã " + sym);
       }
 
       const normData = calculateNormalizedPercentage(compCandles);
 
       if (chartInstanceRef.current) {
-        if (!compareSeriesRef.current) {
-          compareSeriesRef.current = chartInstanceRef.current.addLineSeries({
-            color: "#a855f7",
-            lineWidth: 2,
-            title: `${sym} (%)`,
-            priceScaleId: "compare",
-          });
-          compareSeriesRef.current.priceScale().applyOptions({
-            scaleMargins: { top: 0.1, bottom: 0.2 },
-          });
-        }
-        compareSeriesRef.current.setData(
+        const usedColors = new Set(activeComparisons.map((c) => c.color));
+        const color =
+          COMPARE_PALETTE.find((c) => !usedColors.has(c)) ||
+          COMPARE_PALETTE[activeComparisons.length % COMPARE_PALETTE.length];
+
+        const series = chartInstanceRef.current.addLineSeries({
+          color: color,
+          lineWidth: 2,
+          title: sym,
+          priceScaleId: "compare",
+        });
+
+        series.priceScale().applyOptions({
+          scaleMargins: { top: 0.1, bottom: 0.2 },
+        });
+
+        series.setData(
           normData.map((d) => ({ time: d.time as any, value: d.value }))
         );
-        setActiveCompareSymbol(sym);
+
+        compareSeriesMapRef.current.set(sym, series);
+
+        setActiveComparisons((prev) => [...prev, { symbol: sym, color }]);
       }
     } catch (err: any) {
       alert(err.message || "Lỗi so sánh");
@@ -513,6 +542,87 @@ export default function StockChartClient({
       setCompareLoading(false);
       setCompareSymbol("");
       setCompareSuggestions([]);
+    }
+  };
+
+  const removeComparisonSymbol = (sym: string) => {
+    const series = compareSeriesMapRef.current.get(sym);
+    if (series && chartInstanceRef.current) {
+      try {
+        chartInstanceRef.current.removeSeries(series);
+      } catch {
+        // ignore if already removed
+      }
+    }
+    compareSeriesMapRef.current.delete(sym);
+    setActiveComparisons((prev) => prev.filter((c) => c.symbol !== sym));
+  };
+
+
+  // Re-synchronize all active comparison series when timeframe changes
+  useEffect(() => {
+    if (activeComparisons.length === 0 || !chartInstanceRef.current) return;
+    let isCancelled = false;
+
+    const refreshComparisons = async () => {
+      const days = TIMEFRAME_DAYS[timeframe] || defaultDays;
+      for (const comp of activeComparisons) {
+        try {
+          const res = await fetch(`/api/candles?symbol=${comp.symbol}&days=${days}`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const compCandles = data.candles as CandleItem[];
+          if (!compCandles || compCandles.length === 0) continue;
+
+          const normData = calculateNormalizedPercentage(compCandles);
+          const series = compareSeriesMapRef.current.get(comp.symbol);
+          if (series && !isCancelled) {
+            series.setData(normData.map((d) => ({ time: d.time as any, value: d.value })));
+          }
+        } catch {
+          // Skip individual comparison fetch failure
+        }
+      }
+    };
+
+    refreshComparisons();
+    return () => {
+      isCancelled = true;
+    };
+  }, [timeframe, defaultDays]);
+
+  // Remove comparison if primary symbol becomes the compared symbol
+  useEffect(() => {
+    if (activeComparisons.some((c) => c.symbol === symbol)) {
+      removeComparisonSymbol(symbol);
+    }
+  }, [symbol]);
+
+  // Drag-and-drop to chart overlay handler
+  const handleChartDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverChart(true);
+  };
+
+  const handleChartDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleChartDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverChart(false);
+  };
+
+  const handleChartDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverChart(false);
+    const droppedSymbol =
+      e.dataTransfer.getData("application/x-stock-ticker") ||
+      e.dataTransfer.getData("text/plain");
+    const cleanSym = droppedSymbol.trim().toUpperCase();
+    if (cleanSym && cleanSym !== symbol && cleanSym.length >= 3 && cleanSym.length <= 10) {
+      handleAddComparison(undefined, cleanSym);
     }
   };
 
@@ -548,14 +658,6 @@ export default function StockChartClient({
     }
   };
 
-  const removeComparison = () => {
-    if (chartInstanceRef.current && compareSeriesRef.current) {
-      chartInstanceRef.current.removeSeries(compareSeriesRef.current);
-      compareSeriesRef.current = null;
-      setActiveCompareSymbol(null);
-    }
-  };
-
   const latestCandle = candles[candles.length - 1];
   const prevCandle = candles.length > 1 ? candles[candles.length - 2] : null;
   const refPrice = prevCandle ? prevCandle.close : (latestCandle ? latestCandle.open : 0);
@@ -583,6 +685,7 @@ export default function StockChartClient({
       {/* Top Header of Card: Title & Ticker Tabs */}
       <div className="relative z-30 flex flex-wrap items-center justify-between gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-100 dark:border-zinc-800/60">
         <div className="flex items-center gap-2">
+          {dragHandle}
           <div
             draggable
             onDragStart={(e) => {
@@ -646,18 +749,26 @@ export default function StockChartClient({
             </div>
           )}
 
-          {/* Active Comparison Mini Tab */}
-          {activeCompareSymbol && (
-            <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-800/80 shrink-0">
-              <span>{activeCompareSymbol}</span>
-              <button
-                type="button"
-                onClick={removeComparison}
-                className="text-purple-400 hover:text-rose-500 transition-colors ml-0.5 cursor-pointer"
-                title="Bỏ so sánh"
-              >
-                <XIcon size={12} animateOnHover />
-              </button>
+          {/* Active Comparison Badges */}
+          {activeComparisons.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[240px] sm:max-w-xs md:max-w-md py-0.5">
+              {activeComparisons.map((comp) => (
+                <div
+                  key={comp.symbol}
+                  style={{ borderColor: `${comp.color}80` }}
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white/90 dark:bg-zinc-900/90 shadow-2xs shrink-0 transition-all hover:brightness-105"
+                >
+                  <span style={{ color: comp.color }}>{comp.symbol}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeComparisonSymbol(comp.symbol)}
+                    className="text-slate-400 hover:text-rose-500 transition-colors ml-0.5 cursor-pointer"
+                    title={`Bỏ so sánh mã ${comp.symbol}`}
+                  >
+                    <XIcon size={12} animateOnHover />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -714,10 +825,19 @@ export default function StockChartClient({
                     const isPositive = (item.changePct || 0) > 0;
                     const isNegative = (item.changePct || 0) < 0;
 
+                    const isAlreadyCompared = activeComparisons.some((c) => c.symbol === item.symbol);
+                    const comparedColor = activeComparisons.find((c) => c.symbol === item.symbol)?.color;
+
                     return (
                       <div
                         key={item.symbol}
-                        onClick={() => selectComparisonSymbol(item.symbol)}
+                        onClick={() => {
+                          if (isAlreadyCompared) {
+                            removeComparisonSymbol(item.symbol);
+                          } else {
+                            selectComparisonSymbol(item.symbol);
+                          }
+                        }}
                         onMouseEnter={() => setSelectedSuggestionIndex(idx)}
                         className={`flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors ${
                           isSelected
@@ -733,6 +853,18 @@ export default function StockChartClient({
                             <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
                               {item.exchange}
                             </span>
+                            {isAlreadyCompared && (
+                              <span
+                                style={{
+                                  backgroundColor: `${comparedColor}20`,
+                                  color: comparedColor,
+                                  borderColor: `${comparedColor}50`,
+                                }}
+                                className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border"
+                              >
+                                Đang so sánh
+                              </span>
+                            )}
                           </div>
                           <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
                             {item.name}
@@ -774,7 +906,7 @@ export default function StockChartClient({
               type="button"
               onClick={() => setIsComparing(true)}
               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition-colors shrink-0 cursor-pointer"
-              title="So sánh tương quan % với mã khác"
+              title="So sánh với mã cổ phiếu khác"
             >
               <GitCompareArrowsIcon size={12} animateOnHover />
               <span>+ So sánh</span>
@@ -913,11 +1045,24 @@ export default function StockChartClient({
         </div>
       )}
 
+
       {/* Chart Canvas: Guaranteed min-height and auto-resize with panel */}
       <div
         ref={chartWrapperRef}
+        onDragEnter={handleChartDragEnter}
+        onDragOver={handleChartDragOver}
+        onDragLeave={handleChartDragLeave}
+        onDrop={handleChartDrop}
         className="relative w-full flex-1 min-h-[200px] overflow-hidden bg-white dark:bg-[#171718]"
       >
+        {isDragOverChart && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-purple-500/15 dark:bg-purple-950/50 backdrop-blur-xs border-2 border-dashed border-purple-500 rounded-lg pointer-events-none animate-in fade-in">
+            <div className="px-4 py-2 rounded-xl bg-slate-900/90 text-white font-mono text-xs font-semibold shadow-lg border border-purple-400 flex items-center gap-2">
+              <GitCompareArrowsIcon size={16} className="text-purple-400" />
+              <span>🎯 Thả mã vào đây để so sánh trên biểu đồ</span>
+            </div>
+          </div>
+        )}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-[#171718]/80 z-10">
             <span className="text-xs font-mono text-emerald-500 animate-pulse">

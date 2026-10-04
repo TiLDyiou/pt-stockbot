@@ -11,6 +11,10 @@ import {
   saveModuleVisibility,
   DEFAULT_MODULE_VISIBILITY,
   ModuleVisibility,
+  loadModuleOrder,
+  saveModuleOrder,
+  DEFAULT_MODULE_ORDER,
+  ModuleId,
 } from "@/lib/storage/layout-storage";
 import { StockChart } from "../chart/stock-chart";
 import { WatchlistWidget } from "../watchlist/watchlist-widget";
@@ -24,7 +28,17 @@ import {
   ChartLineIcon,
   BookmarkIcon,
   EarthIcon,
+  GripVerticalIcon,
 } from "lucide-animated";
+
+const MODULE_CONFIG: Record<
+  ModuleId,
+  { label: string; icon: React.ComponentType<{ size?: number; className?: string; animateOnHover?: boolean }> }
+> = {
+  chart: { label: "Biểu đồ", icon: ChartLineIcon },
+  watchlist: { label: "Danh mục", icon: BookmarkIcon },
+  overview: { label: "Tổng quan", icon: EarthIcon },
+};
 
 interface DashboardContainerProps {
   onAnalyzeTicker?: (ticker: string) => void;
@@ -39,9 +53,12 @@ export function DashboardContainer({
 }: DashboardContainerProps) {
   const [chartTabs, setChartTabs] = useState<string[]>(["VNINDEX"]);
   const [activeSymbol, setActiveSymbol] = useState<string>("VNINDEX");
-  const [isMaximized, setIsMaximized] = useState(false);
+  const [maximizedWidget, setMaximizedWidget] = useState<"chart" | "overview" | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [modules, setModules] = useState<ModuleVisibility>(DEFAULT_MODULE_VISIBILITY);
+  const [moduleOrder, setModuleOrder] = useState<ModuleId[]>(DEFAULT_MODULE_ORDER);
+  const [draggedModule, setDraggedModule] = useState<ModuleId | null>(null);
+  const [dragOverModule, setDragOverModule] = useState<ModuleId | null>(null);
 
   useEffect(() => {
     const layout = loadDashboardLayout();
@@ -59,6 +76,10 @@ export function DashboardContainer({
 
     const savedVis = loadModuleVisibility();
     setModules(savedVis);
+
+    const savedOrder = loadModuleOrder();
+    setModuleOrder(savedOrder);
+
     setIsMounted(true);
   }, []);
 
@@ -163,16 +184,49 @@ export function DashboardContainer({
   const handleResetLayout = () => {
     saveDashboardLayout(DEFAULT_LAYOUT);
     saveModuleVisibility(DEFAULT_MODULE_VISIBILITY);
+    saveModuleOrder(DEFAULT_MODULE_ORDER);
     try {
       localStorage.removeItem("dashboard-vertical-panels-v1");
       localStorage.removeItem("dashboard-bottom-panels-v1");
+      localStorage.removeItem("dashboard-vertical-panels-2-v1");
     } catch {
       // Ignore localStorage error if storage is unavailable
     }
     setModules(DEFAULT_MODULE_VISIBILITY);
+    setModuleOrder(DEFAULT_MODULE_ORDER);
     setChartTabs(["VNINDEX"]);
     setActiveSymbol("VNINDEX");
-    setIsMaximized(false);
+    setMaximizedWidget(null);
+  };
+
+  const handleSwapModules = (sourceId: ModuleId, targetId: ModuleId) => {
+    if (sourceId === targetId) return;
+    setModuleOrder((prev) => {
+      const next = [...prev];
+      const sourceIdx = next.indexOf(sourceId);
+      const targetIdx = next.indexOf(targetId);
+      if (sourceIdx !== -1 && targetIdx !== -1) {
+        next[sourceIdx] = targetId;
+        next[targetIdx] = sourceId;
+        saveModuleOrder(next);
+      }
+      return next;
+    });
+  };
+
+  const handleMoveModule = (sourceId: ModuleId, targetId: ModuleId) => {
+    if (sourceId === targetId) return;
+    setModuleOrder((prev) => {
+      const next = [...prev];
+      const sourceIdx = next.indexOf(sourceId);
+      const targetIdx = next.indexOf(targetId);
+      if (sourceIdx !== -1 && targetIdx !== -1) {
+        next.splice(sourceIdx, 1);
+        next.splice(targetIdx, 0, sourceId);
+        saveModuleOrder(next);
+      }
+      return next;
+    });
   };
 
   if (!isMounted) {
@@ -183,73 +237,30 @@ export function DashboardContainer({
     );
   }
 
-  const hasBottomRow = modules.watchlist || modules.overview;
+  const renderDragHandle = (id: ModuleId) => (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData("application/x-dashboard-module", id);
+        e.dataTransfer.effectAllowed = "move";
+        setDraggedModule(id);
+      }}
+      onDragEnd={() => {
+        setDraggedModule(null);
+        setDragOverModule(null);
+      }}
+      className="p-1 rounded-md text-slate-400 dark:text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-zinc-800 cursor-grab active:cursor-grabbing transition-colors shrink-0"
+      title={`Kéo thả để hoán đổi vị trí module ${MODULE_CONFIG[id].label}`}
+    >
+      <GripVerticalIcon size={14} animateOnHover />
+    </div>
+  );
 
-  const renderBottomRow = () => {
-    if (modules.watchlist && modules.overview) {
-      return (
-        <PanelGroup
-          direction="horizontal"
-          id="dashboard-bottom-panels"
-          autoSaveId="dashboard-bottom-panels-v1"
-          className="h-full w-full flex-1"
-        >
-          <Panel
-            id="panel-watchlist"
-            defaultSize={58}
-            minSize={25}
-            className="flex flex-col min-h-0 overflow-hidden"
-          >
-            <WatchlistWidget
-              onSelectSymbol={handleSelectSymbol}
-              onCloseModule={() => setModuleVisible("watchlist", false)}
-            />
-          </Panel>
-
-          <PanelResizeHandle className="w-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-col-resize shrink-0" />
-
-          <Panel
-            id="panel-overview"
-            defaultSize={42}
-            minSize={25}
-            className="flex flex-col min-h-0 overflow-hidden"
-          >
-            <MarketOverviewWidget
-              onCloseModule={() => setModuleVisible("overview", false)}
-            />
-          </Panel>
-        </PanelGroup>
-      );
-    }
-
-    if (modules.watchlist) {
-      return (
-        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-          <WatchlistWidget
-            onSelectSymbol={handleSelectSymbol}
-            onCloseModule={() => setModuleVisible("watchlist", false)}
-          />
-        </div>
-      );
-    }
-
-    if (modules.overview) {
-      return (
-        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-          <MarketOverviewWidget
-            onCloseModule={() => setModuleVisible("overview", false)}
-          />
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  const renderWorkspace = () => {
-    if (isMaximized) {
-      return (
-        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
+  const renderModule = (id: ModuleId) => {
+    switch (id) {
+      case "chart":
+        return (
           <StockChart
             symbol={activeSymbol}
             openSymbols={chartTabs}
@@ -257,82 +268,209 @@ export function DashboardContainer({
             onSelectSymbol={handleSelectSymbol}
             onAddSymbol={handleAddChartTab}
             onCloseSymbol={handleCloseChartTab}
-            isMaximized={true}
-            onToggleMaximize={() => setIsMaximized(false)}
-            onCloseModule={() => setIsMaximized(false)}
+            isMaximized={maximizedWidget === "chart"}
+            onToggleMaximize={() =>
+              setMaximizedWidget(maximizedWidget === "chart" ? null : "chart")
+            }
+            onCloseModule={() => {
+              setMaximizedWidget(null);
+              setModuleVisible("chart", false);
+            }}
+            dragHandle={renderDragHandle("chart")}
           />
+        );
+      case "watchlist":
+        return (
+          <WatchlistWidget
+            onSelectSymbol={handleSelectSymbol}
+            onCloseModule={() => setModuleVisible("watchlist", false)}
+            dragHandle={renderDragHandle("watchlist")}
+          />
+        );
+      case "overview":
+        return (
+          <MarketOverviewWidget
+            onSelectSymbol={handleSelectSymbol}
+            isMaximized={maximizedWidget === "overview"}
+            onToggleMaximize={() =>
+              setMaximizedWidget(maximizedWidget === "overview" ? null : "overview")
+            }
+            onCloseModule={() => {
+              setMaximizedWidget(null);
+              setModuleVisible("overview", false);
+            }}
+            dragHandle={renderDragHandle("overview")}
+          />
+        );
+    }
+  };
+
+  const renderModuleSlot = (id: ModuleId) => {
+    const isOver = dragOverModule === id && draggedModule !== id;
+    return (
+      <div
+        onDragOver={(e) => {
+          if (
+            e.dataTransfer.types.includes("application/x-dashboard-module") ||
+            draggedModule
+          ) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (dragOverModule !== id) setDragOverModule(id);
+          }
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            if (dragOverModule === id) setDragOverModule(null);
+          }
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOverModule(null);
+          const source =
+            (e.dataTransfer.getData("application/x-dashboard-module") as ModuleId) ||
+            draggedModule;
+          if (source && source !== id) {
+            handleSwapModules(source, id);
+          }
+          setDraggedModule(null);
+        }}
+        className={`relative flex flex-col h-full w-full min-h-0 overflow-hidden transition-all duration-150 ${
+          isOver ? "ring-2 ring-emerald-500 ring-inset" : ""
+        }`}
+      >
+        {renderModule(id)}
+
+        {isOver && (
+          <div className="absolute inset-0 z-50 pointer-events-none bg-emerald-500/15 backdrop-blur-[1px] flex items-center justify-center animate-in fade-in duration-100">
+            <div className="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white font-mono text-xs font-bold shadow-lg flex items-center gap-2 border border-emerald-400">
+              <GripVerticalIcon size={14} />
+              <span>Thả để hoán đổi vị trí với {MODULE_CONFIG[id].label}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderWorkspace = () => {
+    // 1. Maximized single widget
+    if (maximizedWidget === "chart") {
+      return (
+        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
+          {renderModule("chart")}
+        </div>
+      );
+    }
+    if (maximizedWidget === "overview") {
+      return (
+        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
+          {renderModule("overview")}
         </div>
       );
     }
 
-    if (modules.chart && hasBottomRow) {
+    const activeModules = moduleOrder.filter((m) => modules[m]);
+
+    // 2. All 3 modules active
+    if (activeModules.length === 3) {
       return (
         <PanelGroup
           direction="vertical"
-          id="dashboard-vertical-panels"
+          id="dashboard-vertical-panels-3"
           autoSaveId="dashboard-vertical-panels-v1"
           className="h-full w-full flex-1"
         >
           <Panel
-            id="panel-chart"
+            id={`panel-${activeModules[0]}`}
             defaultSize={58}
             minSize={25}
             className="flex flex-col min-h-0 overflow-hidden"
           >
-            <StockChart
-              symbol={activeSymbol}
-              openSymbols={chartTabs}
-              activeSymbol={activeSymbol}
-              onSelectSymbol={handleSelectSymbol}
-              onAddSymbol={handleAddChartTab}
-              onCloseSymbol={handleCloseChartTab}
-              isMaximized={false}
-              onToggleMaximize={() => setIsMaximized(true)}
-              onCloseModule={() => setModuleVisible("chart", false)}
-            />
+            {renderModuleSlot(activeModules[0])}
           </Panel>
 
           <PanelResizeHandle className="h-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-row-resize shrink-0" />
 
           <Panel
-            id="panel-bottom"
+            id="panel-bottom-row"
             defaultSize={42}
             minSize={20}
             className="flex flex-col min-h-0 overflow-hidden"
           >
-            {renderBottomRow()}
+            <PanelGroup
+              direction="horizontal"
+              id="dashboard-bottom-panels-3"
+              autoSaveId="dashboard-bottom-panels-v1"
+              className="h-full w-full flex-1"
+            >
+              <Panel
+                id={`panel-${activeModules[1]}`}
+                defaultSize={50}
+                minSize={20}
+                className="flex flex-col min-h-0 overflow-hidden"
+              >
+                {renderModuleSlot(activeModules[1])}
+              </Panel>
+
+              <PanelResizeHandle className="w-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-col-resize shrink-0" />
+
+              <Panel
+                id={`panel-${activeModules[2]}`}
+                defaultSize={50}
+                minSize={20}
+                className="flex flex-col min-h-0 overflow-hidden"
+              >
+                {renderModuleSlot(activeModules[2])}
+              </Panel>
+            </PanelGroup>
           </Panel>
         </PanelGroup>
       );
     }
 
-    if (modules.chart && !hasBottomRow) {
+    // 3. Exactly 2 modules active
+    if (activeModules.length === 2) {
+      return (
+        <PanelGroup
+          direction="vertical"
+          id="dashboard-vertical-panels-2"
+          autoSaveId="dashboard-vertical-panels-2-v1"
+          className="h-full w-full flex-1"
+        >
+          <Panel
+            id={`panel-${activeModules[0]}`}
+            defaultSize={50}
+            minSize={25}
+            className="flex flex-col min-h-0 overflow-hidden"
+          >
+            {renderModuleSlot(activeModules[0])}
+          </Panel>
+
+          <PanelResizeHandle className="h-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-row-resize shrink-0" />
+
+          <Panel
+            id={`panel-${activeModules[1]}`}
+            defaultSize={50}
+            minSize={25}
+            className="flex flex-col min-h-0 overflow-hidden"
+          >
+            {renderModuleSlot(activeModules[1])}
+          </Panel>
+        </PanelGroup>
+      );
+    }
+
+    // 4. Exactly 1 module active
+    if (activeModules.length === 1) {
       return (
         <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-          <StockChart
-            symbol={activeSymbol}
-            openSymbols={chartTabs}
-            activeSymbol={activeSymbol}
-            onSelectSymbol={handleSelectSymbol}
-            onAddSymbol={handleAddChartTab}
-            onCloseSymbol={handleCloseChartTab}
-            isMaximized={false}
-            onToggleMaximize={() => setIsMaximized(true)}
-            onCloseModule={() => setModuleVisible("chart", false)}
-          />
+          {renderModuleSlot(activeModules[0])}
         </div>
       );
     }
 
-    if (!modules.chart && hasBottomRow) {
-      return (
-        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-          {renderBottomRow()}
-        </div>
-      );
-    }
-
-    // All modules closed empty state
+    // 5. Empty state
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center font-mono">
         <LayoutGridIcon size={32} className="text-slate-300 dark:text-zinc-700 mb-3" />
@@ -340,30 +478,21 @@ export function DashboardContainer({
           Tất cả các module hiển thị đang được đóng.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setModuleVisible("chart", true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors cursor-pointer"
-          >
-            <ChartLineIcon size={14} animateOnHover />
-            <span>Mở Biểu đồ</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setModuleVisible("watchlist", true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-medium transition-colors cursor-pointer"
-          >
-            <BookmarkIcon size={14} animateOnHover />
-            <span>Mở Danh mục</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setModuleVisible("overview", true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-medium transition-colors cursor-pointer"
-          >
-            <EarthIcon size={14} animateOnHover />
-            <span>Mở Tổng quan</span>
-          </button>
+          {moduleOrder.map((modId) => {
+            const Icon = MODULE_CONFIG[modId].icon;
+            const label = MODULE_CONFIG[modId].label;
+            return (
+              <button
+                key={modId}
+                type="button"
+                onClick={() => setModuleVisible(modId, true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white text-slate-700 dark:text-zinc-200 font-medium transition-colors cursor-pointer"
+              >
+                <Icon size={14} animateOnHover />
+                <span>Mở {label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -372,7 +501,7 @@ export function DashboardContainer({
   return (
     <div className="flex flex-col h-full w-full bg-slate-50/70 dark:bg-[#09090b] overflow-hidden select-none">
       {/* 1. Seamless Top Market Ticker Strip */}
-      {!isMaximized && (
+      {!maximizedWidget && (
         <div className="w-full shrink-0 border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-[#111113]/70 backdrop-blur-xs py-0.5 px-0">
           <MarketTickerStrip
             activeSymbol={activeSymbol}
@@ -382,7 +511,7 @@ export function DashboardContainer({
       )}
 
       {/* 2. Sleek Module Visibility & Resize Controls Toolbar */}
-      {!isMaximized && (
+      {!maximizedWidget && (
         <div className="w-full shrink-0 flex items-center justify-between px-3 py-1 bg-white/70 dark:bg-[#111113]/70 backdrop-blur-xs border-b border-slate-200/80 dark:border-zinc-800/80 text-xs select-none">
           <div className="flex items-center gap-1.5 font-mono text-[11px]">
             <span className="text-slate-400 dark:text-zinc-500 font-medium hidden sm:inline-flex items-center gap-1 mr-0.5">
@@ -390,65 +519,77 @@ export function DashboardContainer({
               <span>Modules:</span>
             </span>
 
-            {/* Biểu đồ */}
-            <button
-              type="button"
-              onClick={() => toggleModule("chart")}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-colors cursor-pointer ${
-                modules.chart
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
-              }`}
-              title={modules.chart ? "Đóng module Biểu đồ" : "Mở module Biểu đồ"}
-            >
-              <ChartLineIcon size={13} animateOnHover />
-              <span>Biểu đồ</span>
-              {modules.chart ? (
-                <CheckIcon size={11} animateOnHover />
-              ) : (
-                <PlusIcon size={11} animateOnHover />
-              )}
-            </button>
+            {moduleOrder.map((modId) => {
+              const isVisible = modules[modId];
+              const isDragTarget = dragOverModule === modId && draggedModule !== modId;
+              const Icon = MODULE_CONFIG[modId].icon;
+              const label = MODULE_CONFIG[modId].label;
 
-            {/* Danh mục */}
-            <button
-              type="button"
-              onClick={() => toggleModule("watchlist")}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-colors cursor-pointer ${
-                modules.watchlist
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
-              }`}
-              title={modules.watchlist ? "Đóng module Danh mục" : "Mở module Danh mục"}
-            >
-              <BookmarkIcon size={13} animateOnHover />
-              <span>Danh mục</span>
-              {modules.watchlist ? (
-                <CheckIcon size={11} animateOnHover />
-              ) : (
-                <PlusIcon size={11} animateOnHover />
-              )}
-            </button>
-
-            {/* Tổng quan */}
-            <button
-              type="button"
-              onClick={() => toggleModule("overview")}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-colors cursor-pointer ${
-                modules.overview
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
-              }`}
-              title={modules.overview ? "Đóng module Tổng quan" : "Mở module Tổng quan"}
-            >
-              <EarthIcon size={13} animateOnHover />
-              <span>Tổng quan</span>
-              {modules.overview ? (
-                <CheckIcon size={11} animateOnHover />
-              ) : (
-                <PlusIcon size={11} animateOnHover />
-              )}
-            </button>
+              return (
+                <button
+                  key={modId}
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData("application/x-dashboard-module", modId);
+                    e.dataTransfer.effectAllowed = "move";
+                    setDraggedModule(modId);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedModule(null);
+                    setDragOverModule(null);
+                  }}
+                  onDragOver={(e) => {
+                    if (
+                      e.dataTransfer.types.includes("application/x-dashboard-module") ||
+                      draggedModule
+                    ) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverModule !== modId) setDragOverModule(modId);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      if (dragOverModule === modId) setDragOverModule(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverModule(null);
+                    const source =
+                      (e.dataTransfer.getData("application/x-dashboard-module") as ModuleId) ||
+                      draggedModule;
+                    if (source && source !== modId) {
+                      handleMoveModule(source, modId);
+                    }
+                    setDraggedModule(null);
+                  }}
+                  onClick={() => toggleModule(modId)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
+                    isDragTarget
+                      ? "ring-2 ring-emerald-500 bg-emerald-500/20 scale-105"
+                      : isVisible
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
+                      : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
+                  }`}
+                  title={`Kéo để đổi thứ tự module, nhấp để ${isVisible ? "đóng" : "mở"} ${label}`}
+                >
+                  <GripVerticalIcon
+                    size={12}
+                    className="text-slate-400/80 -ml-1 cursor-grab active:cursor-grabbing shrink-0"
+                  />
+                  <Icon size={13} animateOnHover />
+                  <span>{label}</span>
+                  {isVisible ? (
+                    <CheckIcon size={11} animateOnHover />
+                  ) : (
+                    <PlusIcon size={11} animateOnHover />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-2">

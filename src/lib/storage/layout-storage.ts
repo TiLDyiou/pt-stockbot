@@ -1,6 +1,7 @@
 export const STORAGE_KEYS = {
-  LAYOUT: "stockbot:v2:layout",
-  MODULES: "stockbot:v2:modules",
+  LAYOUT: "stockbot:v3:layout",
+  MODULES: "stockbot:v3:modules",
+  MODULE_ORDER: "stockbot:v3:module_order",
   WATCHLIST: "stockbot:v1:watchlist",
   DISCLAIMER: "stockbot:v1:disclaimer",
   CHAT_HISTORY: "stockbot:v1:chat_history",
@@ -35,15 +36,15 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
       size: "double",
     },
     {
-      id: "watchlist-default",
-      type: "watchlist",
-      title: "Danh mục theo dõi",
-      size: "single",
-    },
-    {
       id: "market-overview-default",
       type: "market_overview",
       title: "Tổng quan thị trường",
+      size: "double",
+    },
+    {
+      id: "watchlist-default",
+      type: "watchlist",
+      title: "Danh mục theo dõi",
       size: "single",
     },
   ],
@@ -184,7 +185,7 @@ export interface ModuleVisibility {
 
 export const DEFAULT_MODULE_VISIBILITY: ModuleVisibility = {
   chart: true,
-  watchlist: true,
+  watchlist: false,
   overview: true,
 };
 
@@ -197,9 +198,9 @@ export function loadModuleVisibility(customStorage?: Storage | null): ModuleVisi
     if (!raw) return DEFAULT_MODULE_VISIBILITY;
     const parsed = JSON.parse(raw);
     return {
-      chart: typeof parsed.chart === "boolean" ? parsed.chart : true,
-      watchlist: typeof parsed.watchlist === "boolean" ? parsed.watchlist : true,
-      overview: typeof parsed.overview === "boolean" ? parsed.overview : true,
+      chart: typeof parsed.chart === "boolean" ? parsed.chart : DEFAULT_MODULE_VISIBILITY.chart,
+      watchlist: typeof parsed.watchlist === "boolean" ? parsed.watchlist : DEFAULT_MODULE_VISIBILITY.watchlist,
+      overview: typeof parsed.overview === "boolean" ? parsed.overview : DEFAULT_MODULE_VISIBILITY.overview,
     };
   } catch {
     return DEFAULT_MODULE_VISIBILITY;
@@ -220,3 +221,48 @@ export function saveModuleVisibility(
     return false;
   }
 }
+
+export type ModuleId = "chart" | "watchlist" | "overview";
+
+export const DEFAULT_MODULE_ORDER: ModuleId[] = ["chart", "overview", "watchlist"];
+
+export function loadModuleOrder(customStorage?: Storage | null): ModuleId[] {
+  const store = getSafeStorage(customStorage);
+  if (!store) return DEFAULT_MODULE_ORDER;
+
+  try {
+    const raw = store.getItem(STORAGE_KEYS.MODULE_ORDER);
+    if (!raw) return DEFAULT_MODULE_ORDER;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_MODULE_ORDER;
+
+    const validModules: ModuleId[] = ["chart", "overview", "watchlist"];
+    const filtered = parsed.filter((id): id is ModuleId => validModules.includes(id as ModuleId));
+
+    // Ensure all 3 modules are present in the order, keeping parsed order first
+    for (const mod of validModules) {
+      if (!filtered.includes(mod)) {
+        filtered.push(mod);
+      }
+    }
+    return filtered.slice(0, 3);
+  } catch {
+    return DEFAULT_MODULE_ORDER;
+  }
+}
+
+export function saveModuleOrder(
+  order: ModuleId[],
+  customStorage?: Storage | null
+): boolean {
+  const store = getSafeStorage(customStorage);
+  if (!store) return false;
+
+  try {
+    store.setItem(STORAGE_KEYS.MODULE_ORDER, JSON.stringify(order));
+    return true;
+  } catch {
+    return false;
+  }
+}
+

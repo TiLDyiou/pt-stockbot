@@ -7,6 +7,10 @@ import {
   loadWatchlist,
   saveWatchlist,
   DEFAULT_TICKERS,
+  loadModuleOrder,
+  saveModuleOrder,
+  DEFAULT_MODULE_ORDER,
+  ModuleId,
 } from "../lib/storage/layout-storage";
 
 // In-memory mock storage
@@ -111,5 +115,42 @@ describe("layout-storage", () => {
     // If empty or corrupt, defaults to default tickers
     mockStorage.setItem(STORAGE_KEYS.WATCHLIST, "not-json");
     expect(loadWatchlist(mockStorage)).toEqual(DEFAULT_TICKERS);
+  });
+
+  it("loads and saves module order correctly", () => {
+    // Default when empty
+    expect(loadModuleOrder(mockStorage)).toEqual(DEFAULT_MODULE_ORDER);
+
+    // Save custom order
+    const customOrder: ModuleId[] = ["overview", "chart", "watchlist"];
+    saveModuleOrder(customOrder, mockStorage);
+    expect(loadModuleOrder(mockStorage)).toEqual(customOrder);
+
+    // Corrupted storage falls back to default
+    mockStorage.setItem(STORAGE_KEYS.MODULE_ORDER, "invalid json");
+    expect(loadModuleOrder(mockStorage)).toEqual(DEFAULT_MODULE_ORDER);
+
+    // Missing modules in custom order are auto-appended
+    mockStorage.setItem(STORAGE_KEYS.MODULE_ORDER, JSON.stringify(["watchlist"]));
+    expect(loadModuleOrder(mockStorage)).toEqual(["watchlist", "chart", "overview"]);
+  });
+
+  it("loads and saves module visibility with chart and overview enabled by default", async () => {
+    const { loadModuleVisibility, saveModuleVisibility, DEFAULT_MODULE_VISIBILITY } = await import(
+      "../lib/storage/layout-storage"
+    );
+    expect(DEFAULT_MODULE_VISIBILITY).toEqual({
+      chart: true,
+      watchlist: false,
+      overview: true,
+    });
+    expect(loadModuleVisibility(mockStorage)).toEqual(DEFAULT_MODULE_VISIBILITY);
+
+    saveModuleVisibility({ chart: true, watchlist: true, overview: false }, mockStorage);
+    expect(loadModuleVisibility(mockStorage)).toEqual({
+      chart: true,
+      watchlist: true,
+      overview: false,
+    });
   });
 });

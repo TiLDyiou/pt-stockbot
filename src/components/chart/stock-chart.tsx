@@ -28,6 +28,7 @@ export interface StockChartProps {
   isMaximized?: boolean;
   onToggleMaximize?: () => void;
   onCloseModule?: () => void;
+  dragHandle?: React.ReactNode;
 }
 
 export function StockChart(props: StockChartProps) {

@@ -33,6 +33,7 @@ import {
 interface WatchlistWidgetProps {
   onSelectSymbol?: (symbol: string) => void;
   onCloseModule?: () => void;
+  dragHandle?: React.ReactNode;
 }
 
 interface TickerQuote {
@@ -145,7 +146,11 @@ function SortableItem({
   );
 }
 
-export function WatchlistWidget({ onSelectSymbol, onCloseModule }: WatchlistWidgetProps) {
+export function WatchlistWidget({
+  onSelectSymbol,
+  onCloseModule,
+  dragHandle,
+}: WatchlistWidgetProps) {
   const [tickers, setTickers] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Record<string, TickerQuote>>({});
   const [sparklines, setSparklines] = useState<Record<string, { date: string; close: number }[]>>({});
@@ -252,6 +257,7 @@ export function WatchlistWidget({ onSelectSymbol, onCloseModule }: WatchlistWidg
       {/* Card Header */}
       <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-slate-100 dark:border-zinc-800/60">
         <div className="flex items-center gap-2.5 shrink-0">
+          {dragHandle}
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <BookmarkIcon size={16} className="text-emerald-500" animateOnHover />
           </div>

@@ -5,7 +5,7 @@ import { stockTools } from "@/lib/ai/tools";
 
 export const maxDuration = 30;
 
-const SYSTEM_PROMPT = `Bạn là trợ lý ảo phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) thông minh, khách quan, trung thực và sắc bén.
+const SYSTEM_PROMPT = `Bạn là trợ lý ảo phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) khách quan, trung thực.
 
 Nguyên tắc bắt buộc:
 1. Trả lời súc tích, ngắn gọn, mạch lạc, đi thẳng vào trọng tâm câu hỏi của người dùng.
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       {
         status: err?.message?.includes("tin nhắn") ? 400 : 500,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 }
