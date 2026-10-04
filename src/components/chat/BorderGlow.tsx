@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback, useEffect, type ReactNode } from 'react';
+import React, { useRef, useCallback, useEffect, useState, type ReactNode } from 'react';
 import './BorderGlow.css';
 
 export interface BorderGlowProps {
@@ -95,6 +95,21 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
   fillOpacity = 0.5,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setIsDark(document.documentElement.classList.contains('dark'));
+      const observer = new MutationObserver(() => {
+        setIsDark(document.documentElement.classList.contains('dark'));
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+      return () => observer.disconnect();
+    }
+  }, []);
 
   const getCenterOfElement = useCallback((el: HTMLElement) => {
     const { width, height } = el.getBoundingClientRect();
@@ -160,7 +175,10 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
   }, [animated]);
 
   const glowVars = buildGlowVars(glowColor, glowIntensity);
-  const lightSurface = isLightColor(backgroundColor);
+  const effectiveBg = !isDark
+    ? (isLightColor(backgroundColor) ? backgroundColor : '#ffffff')
+    : (backgroundColor || '#120F17');
+  const lightSurface = isLightColor(effectiveBg);
 
   return (
     <div
@@ -168,7 +186,7 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
       onPointerMove={handlePointerMove}
       className={`border-glow-card${lightSurface ? ' border-glow-card--light' : ''} ${className}`}
       style={{
-        '--card-bg': backgroundColor,
+        '--card-bg': effectiveBg,
         '--edge-sensitivity': edgeSensitivity,
         '--border-radius': `${borderRadius}px`,
         '--glow-padding': `${glowRadius}px`,

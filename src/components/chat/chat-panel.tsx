@@ -467,14 +467,14 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
         <form onSubmit={onFormSubmit} className="w-full">
           <BorderGlow
             edgeSensitivity={9}
-            glowColor="40 80 80"
+            glowColor="165 80 65"
             backgroundColor="#120F17"
             borderRadius={28}
             glowRadius={30}
             glowIntensity={0.5}
             coneSpread={11}
             animated
-            colors={['#c084fc', '#f472b6', '#38bdf8']}
+            colors={['#8b5cf6', '#10b981', '#06b6d4']}
             className="w-full"
           >
             <div
