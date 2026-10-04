@@ -14,6 +14,7 @@ import {
 import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
 import { cn } from "@/lib/utils/cn";
 import ThoughtLine from "./thought-line";
+import ElectricLogo from "./ElectricLogo";
 
 interface ChatPanelProps {
   onOpenChart?: (ticker: string) => void;
@@ -379,23 +380,30 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 border border-emerald-500/20 p-2">
-              <img
+            <div
+              style={{ width: '100%', height: '200px', position: 'relative' }}
+              className="max-w-[280px] mx-auto mb-1 flex items-center justify-center"
+            >
+              <ElectricLogo
                 src="/candlestick.svg"
-                alt="PhuocThinh AI"
-                width={28}
-                height={28}
-                style={{ width: 28, height: 28 }}
-                className="w-7 h-7 object-contain"
+                color="#ecc7ff"
+                glowColor="#ad6dff"
+                scale={0.75}
+                strands={4}
+                bend={0.6}
+                crackle={1.5}
+                arcs={1}
+                speed={2.5}
+                interactive
+                intensity={1}
+                glow={1}
+                thickness={1.5}
+                flicker={0.6}
+                fill={0}
+                cursorIntensity={0.75}
+                cursorRadius={100}
               />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
-              Phân tích Chứng khoán Thông minh
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xs mb-5 leading-relaxed">
-              Trợ lý tự động gọi tools lấy giá, lịch sử nến, RSI, MACD, báo cáo
-              tài chính và bối cảnh thị trường.
-            </p>
 
             <div className="flex flex-col gap-2 w-full max-w-xs">
               {SUGGESTED_PROMPTS.map((prompt) => (
