@@ -5,15 +5,14 @@ import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import {
   loadDashboardLayout,
   saveDashboardLayout,
-  DEFAULT_LAYOUT,
   DashboardWidget,
   loadModuleVisibility,
   saveModuleVisibility,
   DEFAULT_MODULE_VISIBILITY,
-  ModuleVisibility,
   loadModuleOrder,
   saveModuleOrder,
   DEFAULT_MODULE_ORDER,
+  ModuleVisibility,
   ModuleId,
 } from "@/lib/storage/layout-storage";
 import { StockChart } from "../chart/stock-chart";
@@ -21,9 +20,6 @@ import { WatchlistWidget } from "../watchlist/watchlist-widget";
 import { MarketOverviewWidget } from "./market-overview-widget";
 import { MarketTickerStrip } from "./market-ticker-strip";
 import {
-  CheckIcon,
-  PlusIcon,
-  RefreshCcwIcon,
   LayoutGridIcon,
   ChartLineIcon,
   BookmarkIcon,
@@ -31,7 +27,7 @@ import {
   GripVerticalIcon,
 } from "lucide-animated";
 
-const MODULE_CONFIG: Record<
+export const MODULE_CONFIG: Record<
   ModuleId,
   { label: string; icon: React.ComponentType<{ size?: number; className?: string; animateOnHover?: boolean }> }
 > = {
@@ -40,25 +36,36 @@ const MODULE_CONFIG: Record<
   overview: { label: "Tổng quan", icon: EarthIcon },
 };
 
-interface DashboardContainerProps {
+export interface DashboardContainerProps {
   onAnalyzeTicker?: (ticker: string) => void;
   externalAddChartTicker?: string | null;
   onClearExternalChartTicker?: () => void;
+  modules?: ModuleVisibility;
+  moduleOrder?: ModuleId[];
+  onSetModuleVisible?: (mod: keyof ModuleVisibility, visible: boolean) => void;
+  onSetModuleOrder?: (order: ModuleId[] | ((prev: ModuleId[]) => ModuleId[])) => void;
 }
 
 export function DashboardContainer({
   onAnalyzeTicker: _onAnalyzeTicker,
   externalAddChartTicker,
   onClearExternalChartTicker,
+  modules: propModules,
+  moduleOrder: propModuleOrder,
+  onSetModuleVisible,
+  onSetModuleOrder,
 }: DashboardContainerProps) {
   const [chartTabs, setChartTabs] = useState<string[]>(["VNINDEX"]);
   const [activeSymbol, setActiveSymbol] = useState<string>("VNINDEX");
   const [maximizedWidget, setMaximizedWidget] = useState<"chart" | "overview" | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [modules, setModules] = useState<ModuleVisibility>(DEFAULT_MODULE_VISIBILITY);
-  const [moduleOrder, setModuleOrder] = useState<ModuleId[]>(DEFAULT_MODULE_ORDER);
+  const [localModules, setLocalModules] = useState<ModuleVisibility>(DEFAULT_MODULE_VISIBILITY);
+  const [localModuleOrder, setLocalModuleOrder] = useState<ModuleId[]>(DEFAULT_MODULE_ORDER);
   const [draggedModule, setDraggedModule] = useState<ModuleId | null>(null);
   const [dragOverModule, setDragOverModule] = useState<ModuleId | null>(null);
+
+  const modules = propModules ?? localModules;
+  const moduleOrder = propModuleOrder ?? localModuleOrder;
 
   useEffect(() => {
     const layout = loadDashboardLayout();
@@ -74,14 +81,18 @@ export function DashboardContainer({
       setActiveSymbol("VNINDEX");
     }
 
-    const savedVis = loadModuleVisibility();
-    setModules(savedVis);
+    if (!propModules) {
+      const savedVis = loadModuleVisibility();
+      setLocalModules(savedVis);
+    }
 
-    const savedOrder = loadModuleOrder();
-    setModuleOrder(savedOrder);
+    if (!propModuleOrder) {
+      const savedOrder = loadModuleOrder();
+      setLocalModuleOrder(savedOrder);
+    }
 
     setIsMounted(true);
-  }, []);
+  }, [propModules, propModuleOrder]);
 
   const persistTabs = (tabs: string[]) => {
     const widgets: DashboardWidget[] = tabs.map((sym) => ({
@@ -108,21 +119,17 @@ export function DashboardContainer({
     saveDashboardLayout({ version: 2, widgets });
   };
 
-  const toggleModule = (mod: keyof ModuleVisibility) => {
-    setModules((prev) => {
-      const next = { ...prev, [mod]: !prev[mod] };
-      saveModuleVisibility(next);
-      return next;
-    });
-  };
-
   const setModuleVisible = (mod: keyof ModuleVisibility, visible: boolean) => {
-    setModules((prev) => {
-      if (prev[mod] === visible) return prev;
-      const next = { ...prev, [mod]: visible };
-      saveModuleVisibility(next);
-      return next;
-    });
+    if (onSetModuleVisible) {
+      onSetModuleVisible(mod, visible);
+    } else {
+      setLocalModules((prev) => {
+        if (prev[mod] === visible) return prev;
+        const next = { ...prev, [mod]: visible };
+        saveModuleVisibility(next);
+        return next;
+      });
+    }
   };
 
   useEffect(() => {
@@ -181,27 +188,9 @@ export function DashboardContainer({
     }
   };
 
-  const handleResetLayout = () => {
-    saveDashboardLayout(DEFAULT_LAYOUT);
-    saveModuleVisibility(DEFAULT_MODULE_VISIBILITY);
-    saveModuleOrder(DEFAULT_MODULE_ORDER);
-    try {
-      localStorage.removeItem("dashboard-vertical-panels-v1");
-      localStorage.removeItem("dashboard-bottom-panels-v1");
-      localStorage.removeItem("dashboard-vertical-panels-2-v1");
-    } catch {
-      // Ignore localStorage error if storage is unavailable
-    }
-    setModules(DEFAULT_MODULE_VISIBILITY);
-    setModuleOrder(DEFAULT_MODULE_ORDER);
-    setChartTabs(["VNINDEX"]);
-    setActiveSymbol("VNINDEX");
-    setMaximizedWidget(null);
-  };
-
   const handleSwapModules = (sourceId: ModuleId, targetId: ModuleId) => {
     if (sourceId === targetId) return;
-    setModuleOrder((prev) => {
+    const reorder = (prev: ModuleId[]) => {
       const next = [...prev];
       const sourceIdx = next.indexOf(sourceId);
       const targetIdx = next.indexOf(targetId);
@@ -211,22 +200,12 @@ export function DashboardContainer({
         saveModuleOrder(next);
       }
       return next;
-    });
-  };
-
-  const handleMoveModule = (sourceId: ModuleId, targetId: ModuleId) => {
-    if (sourceId === targetId) return;
-    setModuleOrder((prev) => {
-      const next = [...prev];
-      const sourceIdx = next.indexOf(sourceId);
-      const targetIdx = next.indexOf(targetId);
-      if (sourceIdx !== -1 && targetIdx !== -1) {
-        next.splice(sourceIdx, 1);
-        next.splice(targetIdx, 0, sourceId);
-        saveModuleOrder(next);
-      }
-      return next;
-    });
+    };
+    if (onSetModuleOrder) {
+      onSetModuleOrder(reorder);
+    } else {
+      setLocalModuleOrder(reorder);
+    }
   };
 
   if (!isMounted) {
@@ -515,104 +494,7 @@ export function DashboardContainer({
         </div>
       )}
 
-      {/* 2. Sleek Module Visibility & Resize Controls Toolbar */}
-      {!maximizedWidget && (
-        <div className="w-full shrink-0 flex items-center justify-between px-3 py-1 bg-white/70 dark:bg-[#111113]/70 backdrop-blur-xs border-b border-slate-200/80 dark:border-zinc-800/80 text-xs select-none">
-          <div className="flex items-center gap-1.5 font-mono text-[11px]">
-            <span className="text-slate-400 dark:text-zinc-500 font-medium hidden sm:inline-flex items-center gap-1 mr-0.5">
-              <LayoutGridIcon size={12} animateOnHover />
-              <span>Modules:</span>
-            </span>
-
-            {moduleOrder.map((modId) => {
-              const isVisible = modules[modId];
-              const isDragTarget = dragOverModule === modId && draggedModule !== modId;
-              const Icon = MODULE_CONFIG[modId].icon;
-              const label = MODULE_CONFIG[modId].label;
-
-              return (
-                <button
-                  key={modId}
-                  type="button"
-                  draggable
-                  onDragStart={(e) => {
-                    e.stopPropagation();
-                    e.dataTransfer.setData("application/x-dashboard-module", modId);
-                    e.dataTransfer.setData(`application/x-module-${modId}`, modId);
-                    e.dataTransfer.effectAllowed = modId === "watchlist" ? "copyMove" : "move";
-                    setDraggedModule(modId);
-                  }}
-                  onDragEnd={() => {
-                    setDraggedModule(null);
-                    setDragOverModule(null);
-                  }}
-                  onDragOver={(e) => {
-                    if (
-                      e.dataTransfer.types.includes("application/x-dashboard-module") ||
-                      draggedModule
-                    ) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
-                      if (dragOverModule !== modId) setDragOverModule(modId);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      if (dragOverModule === modId) setDragOverModule(null);
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOverModule(null);
-                    const source =
-                      (e.dataTransfer.getData("application/x-dashboard-module") as ModuleId) ||
-                      draggedModule;
-                    if (source && source !== modId) {
-                      handleMoveModule(source, modId);
-                    }
-                    setDraggedModule(null);
-                  }}
-                  onClick={() => toggleModule(modId)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
-                    isDragTarget
-                      ? "ring-2 ring-emerald-500 bg-emerald-500/20 scale-105"
-                      : isVisible
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                      : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
-                  }`}
-                  title={`Kéo để đổi thứ tự module, nhấp để ${isVisible ? "đóng" : "mở"} ${label}`}
-                >
-                  <GripVerticalIcon
-                    size={12}
-                    className="text-slate-400/80 -ml-1 cursor-grab active:cursor-grabbing shrink-0"
-                  />
-                  <Icon size={13} animateOnHover />
-                  <span>{label}</span>
-                  {isVisible ? (
-                    <CheckIcon size={11} animateOnHover />
-                  ) : (
-                    <PlusIcon size={11} animateOnHover />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleResetLayout}
-              className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-slate-700 dark:hover:text-zinc-300 transition-colors cursor-pointer"
-              title="Khôi phục bố cục và kích thước mặc định"
-            >
-              <RefreshCcwIcon size={11} animateOnHover />
-              <span>Đặt lại</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Main Dynamic Resizable Workspace Content */}
+      {/* 2. Main Dynamic Resizable Workspace Content */}
       <div className="flex-1 min-h-0 w-full overflow-hidden flex flex-col">
         {renderWorkspace()}
       </div>

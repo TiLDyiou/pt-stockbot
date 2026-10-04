@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   PanelGroup,
   Panel,
@@ -8,7 +8,10 @@ import {
   type ImperativePanelHandle,
 } from "react-resizable-panels";
 import { ChatPanel } from "./chat/chat-panel";
-import { DashboardContainer } from "./dashboard/dashboard-container";
+import {
+  DashboardContainer,
+  MODULE_CONFIG,
+} from "./dashboard/dashboard-container";
 import { DisclaimerModal } from "./chat/disclaimer-modal";
 import { StockSearchBar } from "./search/stock-search-bar";
 import {
@@ -16,7 +19,24 @@ import {
   MoonIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
+  LayoutGridIcon,
+  CheckIcon,
+  PlusIcon,
+  RefreshCcwIcon,
+  GripVerticalIcon,
 } from "lucide-animated";
+import {
+  loadModuleVisibility,
+  saveModuleVisibility,
+  DEFAULT_MODULE_VISIBILITY,
+  loadModuleOrder,
+  saveModuleOrder,
+  DEFAULT_MODULE_ORDER,
+  saveDashboardLayout,
+  DEFAULT_LAYOUT,
+  type ModuleVisibility,
+  type ModuleId,
+} from "@/lib/storage/layout-storage";
 
 export function WorkspaceLayout() {
   const [activeTab, setActiveTab] = useState<"chat" | "dashboard">("chat");
@@ -27,6 +47,12 @@ export function WorkspaceLayout() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const chatPanelRef = useRef<ImperativePanelHandle>(null);
+
+  const [modules, setModules] = useState<ModuleVisibility>(DEFAULT_MODULE_VISIBILITY);
+  const [moduleOrder, setModuleOrder] = useState<ModuleId[]>(DEFAULT_MODULE_ORDER);
+  const [draggedModule, setDraggedModule] = useState<ModuleId | null>(null);
+  const [dragOverModule, setDragOverModule] = useState<ModuleId | null>(null);
+  const [resetKey, setResetKey] = useState(0);
 
   const toggleChatPanel = () => {
     const panel = chatPanelRef.current;
@@ -52,6 +78,12 @@ export function WorkspaceLayout() {
     document.documentElement.classList.add("dark");
     setIsDarkMode(true);
 
+    const savedVis = loadModuleVisibility();
+    setModules(savedVis);
+
+    const savedOrder = loadModuleOrder();
+    setModuleOrder(savedOrder);
+
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -67,8 +99,60 @@ export function WorkspaceLayout() {
     });
   };
 
+  const handleToggleModule = (modId: ModuleId) => {
+    setModules((prev) => {
+      const next = { ...prev, [modId]: !prev[modId] };
+      saveModuleVisibility(next);
+      return next;
+    });
+  };
+
+  const handleSetModuleVisible = useCallback(
+    (mod: keyof ModuleVisibility, visible: boolean) => {
+      setModules((prev) => {
+        if (prev[mod] === visible) return prev;
+        const next = { ...prev, [mod]: visible };
+        saveModuleVisibility(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleMoveModule = (sourceId: ModuleId, targetId: ModuleId) => {
+    if (sourceId === targetId) return;
+    setModuleOrder((prev) => {
+      const next = [...prev];
+      const sourceIdx = next.indexOf(sourceId);
+      const targetIdx = next.indexOf(targetId);
+      if (sourceIdx !== -1 && targetIdx !== -1) {
+        next.splice(sourceIdx, 1);
+        next.splice(targetIdx, 0, sourceId);
+        saveModuleOrder(next);
+      }
+      return next;
+    });
+  };
+
+  const handleResetLayout = () => {
+    saveDashboardLayout(DEFAULT_LAYOUT);
+    saveModuleVisibility(DEFAULT_MODULE_VISIBILITY);
+    saveModuleOrder(DEFAULT_MODULE_ORDER);
+    try {
+      localStorage.removeItem("dashboard-vertical-panels-v1");
+      localStorage.removeItem("dashboard-bottom-panels-v1");
+      localStorage.removeItem("dashboard-vertical-panels-2-v1");
+    } catch {
+      // Ignore localStorage error if storage is unavailable
+    }
+    setModules(DEFAULT_MODULE_VISIBILITY);
+    setModuleOrder(DEFAULT_MODULE_ORDER);
+    setResetKey((prev) => prev + 1);
+  };
+
   const handleOpenChart = (ticker: string) => {
     setTargetChartTicker(ticker);
+    handleSetModuleVisible("chart", true);
     if (isMobile) {
       setActiveTab("dashboard");
     }
@@ -98,6 +182,9 @@ export function WorkspaceLayout() {
             <img
               src="/candlestick.svg"
               alt="PhuocThinh Stockbot"
+              width={20}
+              height={20}
+              style={{ width: 20, height: 20 }}
               className="w-5 h-5 object-contain shrink-0"
             />
             <span className="font-bold text-xs sm:text-sm tracking-tight text-slate-900 dark:text-white">
@@ -115,12 +202,105 @@ export function WorkspaceLayout() {
         </div>
 
         {/* Center: Search Bar */}
-        <div className="flex-1 max-w-sm mx-3">
+        <div className="flex-1 max-w-xs lg:max-w-sm mx-2 sm:mx-3">
           <StockSearchBar onSelectSymbol={handleOpenChart} />
         </div>
 
-        {/* Right: Controls */}
-        <div className="flex items-center gap-2">
+        {/* Right: Controls (Modules + Theme Switcher) */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Modules Toolbar (desktop/tablet) */}
+          <div className="hidden md:flex items-center gap-1 sm:gap-1.5 font-mono text-[11px]">
+            <span className="text-slate-400 dark:text-zinc-500 font-medium hidden xl:inline-flex items-center gap-1 mr-0.5">
+              <LayoutGridIcon size={12} animateOnHover />
+              <span>Modules:</span>
+            </span>
+
+            {moduleOrder.map((modId) => {
+              const isVisible = modules[modId];
+              const isDragTarget = dragOverModule === modId && draggedModule !== modId;
+              const Icon = MODULE_CONFIG[modId].icon;
+              const label = MODULE_CONFIG[modId].label;
+
+              return (
+                <button
+                  key={modId}
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData("application/x-dashboard-module", modId);
+                    e.dataTransfer.setData(`application/x-module-${modId}`, modId);
+                    e.dataTransfer.effectAllowed = modId === "watchlist" ? "copyMove" : "move";
+                    setDraggedModule(modId);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedModule(null);
+                    setDragOverModule(null);
+                  }}
+                  onDragOver={(e) => {
+                    if (
+                      e.dataTransfer.types.includes("application/x-dashboard-module") ||
+                      draggedModule
+                    ) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverModule !== modId) setDragOverModule(modId);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      if (dragOverModule === modId) setDragOverModule(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverModule(null);
+                    const source =
+                      (e.dataTransfer.getData("application/x-dashboard-module") as ModuleId) ||
+                      draggedModule;
+                    if (source && source !== modId) {
+                      handleMoveModule(source, modId);
+                    }
+                    setDraggedModule(null);
+                  }}
+                  onClick={() => handleToggleModule(modId)}
+                  className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                    isDragTarget
+                      ? "ring-2 ring-emerald-500 bg-emerald-500/20 scale-105"
+                      : isVisible
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
+                      : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
+                  }`}
+                  title={`Kéo để đổi thứ tự module, nhấp để ${isVisible ? "đóng" : "mở"} ${label}`}
+                >
+                  <GripVerticalIcon
+                    size={11}
+                    className="text-slate-400/80 -ml-0.5 cursor-grab active:cursor-grabbing shrink-0"
+                  />
+                  <Icon size={12} animateOnHover />
+                  <span>{label}</span>
+                  {isVisible ? (
+                    <CheckIcon size={11} animateOnHover />
+                  ) : (
+                    <PlusIcon size={11} animateOnHover />
+                  )}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={handleResetLayout}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono text-slate-400 hover:text-slate-700 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+              title="Khôi phục bố cục và kích thước mặc định"
+            >
+              <RefreshCcwIcon size={11} animateOnHover />
+              <span className="hidden lg:inline">Đặt lại</span>
+            </button>
+
+            <div className="h-4 w-px bg-slate-200 dark:bg-zinc-800 mx-1" />
+          </div>
+
           {/* Mobile Tab Switcher */}
           {isMobile && (
             <div className="flex bg-slate-100 dark:bg-zinc-800/80 p-0.5 rounded-lg text-xs font-medium">
@@ -173,6 +353,11 @@ export function WorkspaceLayout() {
               <ChatPanel onOpenChart={handleOpenChart} />
             ) : (
               <DashboardContainer
+                key={resetKey}
+                modules={modules}
+                moduleOrder={moduleOrder}
+                onSetModuleVisible={handleSetModuleVisible}
+                onSetModuleOrder={setModuleOrder}
                 externalAddChartTicker={targetChartTicker}
                 onClearExternalChartTicker={() => setTargetChartTicker(null)}
               />
@@ -221,6 +406,11 @@ export function WorkspaceLayout() {
               className="h-full flex flex-col min-h-0 overflow-hidden"
             >
               <DashboardContainer
+                key={resetKey}
+                modules={modules}
+                moduleOrder={moduleOrder}
+                onSetModuleVisible={handleSetModuleVisible}
+                onSetModuleOrder={setModuleOrder}
                 externalAddChartTicker={targetChartTicker}
                 onClearExternalChartTicker={() => setTargetChartTicker(null)}
               />
