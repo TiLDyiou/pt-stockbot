@@ -427,21 +427,6 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
             ))}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex flex-col mb-3.5 items-start">
-                <div className="flex items-center mb-1.5 px-0.5 justify-start">
-                  <span
-                    className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)] p-0.5 overflow-hidden"
-                    title="PhuocThinh AI"
-                  >
-                    <img
-                      src="/candlestick.svg"
-                      alt="PhuocThinh AI"
-                      width={14}
-                      height={14}
-                      style={{ width: 14, height: 14 }}
-                      className="w-3.5 h-3.5 object-contain"
-                    />
-                  </span>
-                </div>
                 <div className="w-full max-w-[92%] md:max-w-[88%] mb-2 px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-zinc-900/90 border border-emerald-500/30 dark:border-emerald-500/30 shadow-xs">
                   <ThoughtLine
                     working={true}

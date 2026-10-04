@@ -4,10 +4,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message } from "ai";
-import {
-  TrendingUpIcon,
-  UserIcon,
-} from "lucide-animated";
+import { TrendingUpIcon } from "lucide-animated";
 import ThoughtLine from "./thought-line";
 
 interface ChatMessageItemProps {
@@ -105,31 +102,6 @@ export function ChatMessageItem({
         isUser ? "items-end" : "items-start"
       }`}
     >
-      {/* Sender Header - Icon only with glow effect */}
-      <div className={`flex items-center mb-1.5 px-0.5 ${isUser ? "justify-end" : "justify-start"}`}>
-        {isUser ? (
-          <span
-            className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)]"
-            title="Bạn"
-          >
-            <UserIcon size={11} animateOnHover />
-          </span>
-        ) : (
-          <span
-            className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)] p-0.5 overflow-hidden"
-            title="PhuocThinh AI"
-          >
-            <img
-              src="/candlestick.svg"
-              alt="PhuocThinh AI"
-              width={14}
-              height={14}
-              style={{ width: 14, height: 14 }}
-              className="w-3.5 h-3.5 object-contain"
-            />
-          </span>
-        )}
-      </div>
 
       {/* 1. Standalone Thinking Block (chỉ hiển thị khi đang suy nghĩ/gọi tools) */}
       {showThinkingCard && (
