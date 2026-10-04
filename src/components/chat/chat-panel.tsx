@@ -15,6 +15,7 @@ import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
 import { cn } from "@/lib/utils/cn";
 import ThoughtLine from "./thought-line";
 import ElectricLogo from "./ElectricLogo";
+import BorderGlow from "./BorderGlow";
 
 interface ChatPanelProps {
   onOpenChart?: (ticker: string) => void;
@@ -73,7 +74,6 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     minHeight: 36,
     maxHeight: 180,
   });
-  const [isFocused, setIsFocused] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
   const lastDropTimeRef = useRef(0);
@@ -465,86 +465,89 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       {/* Input Area */}
       <div className="relative p-2.5 bg-white dark:bg-[#171718] border-t border-slate-200 dark:border-zinc-800">
         <form onSubmit={onFormSubmit} className="w-full">
-          <div
-            aria-label="Khung nhập câu hỏi AI"
-            className={cn(
-              "relative flex w-full cursor-text items-center rounded-2xl text-left transition-all duration-200",
-              "bg-slate-100 dark:bg-zinc-900 border-none outline-none",
-              isFocused &&
-                "ring-2 ring-emerald-500 shadow-xs",
-              isDraggingOver &&
-                "ring-2 ring-emerald-500 bg-emerald-100 dark:bg-emerald-950 shadow-md",
-            )}
-            onClick={handleContainerClick}
+          <BorderGlow
+            borderRadius={16}
+            glowColor="155 80 50"
+            colors={['#10b981', '#06b6d4', '#3b82f6']}
+            className="w-full"
           >
-            {isDraggingOver && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500 dark:bg-emerald-950 border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
-                <span>Thả mã hoặc module Danh mục để phân tích xu hướng</span>
-              </div>
-            )}
-            <div className="w-full max-h-[180px] overflow-y-auto">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => {
-                  handleInputChange(e);
-                  adjustHeight();
-                }}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (input.trim() && !isLoading) {
-                      onFormSubmit();
+            <div
+              aria-label="Khung nhập câu hỏi AI"
+              className={cn(
+                "relative flex w-full cursor-text items-center rounded-2xl text-left transition-all duration-200",
+                "bg-transparent border-none outline-none",
+                isDraggingOver &&
+                  "bg-emerald-100 dark:bg-emerald-950",
+              )}
+              onClick={handleContainerClick}
+            >
+              {isDraggingOver && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500 dark:bg-emerald-950 border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
+                  <span>Thả mã hoặc module Danh mục để phân tích xu hướng</span>
+                </div>
+              )}
+              <div className="w-full max-h-[180px] overflow-y-auto">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                    adjustHeight();
+                  }}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (input.trim() && !isLoading) {
+                        onFormSubmit();
+                      }
                     }
-                  }
-                }}
-                rows={1}
-                placeholder="Hỏi AI về cổ phiếu hoặc thị trường"
-                className="w-full resize-none border-none bg-transparent pl-3.5 pr-[72px] py-2 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
-              />
-            </div>
+                  }}
+                  rows={1}
+                  placeholder="Hỏi AI về cổ phiếu hoặc thị trường"
+                  className="w-full resize-none border-none bg-transparent pl-3.5 pr-[72px] py-2 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
+                />
+              </div>
 
-            <div className="absolute right-1.5 bottom-1 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleClearHistory}
-                className="flex items-center justify-center h-7 w-7 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
-                title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
-              >
-                <DeleteIcon size={13} animateOnHover />
-              </button>
-
-              {isLoading ? (
+              <div className="absolute right-1.5 bottom-1 flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={stop}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                  title="Dừng tạo phản hồi"
+                  onClick={handleClearHistory}
+                  className="flex items-center justify-center h-7 w-7 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                  title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
                 >
-                  <BanIcon size={12} animateOnHover />
-                  <span>Dừng</span>
+                  <DeleteIcon size={13} animateOnHover />
                 </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={!input.trim()}
-                  className={cn(
-                    "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
-                    input.trim()
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer active:scale-95"
-                      : "bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
-                  )}
-                  title="Gửi câu hỏi"
-                >
-                  <SendIcon size={13} animateOnHover />
-                </button>
-              )}
+
+                {isLoading ? (
+                  <button
+                    type="button"
+                    onClick={stop}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    title="Dừng tạo phản hồi"
+                  >
+                    <BanIcon size={12} animateOnHover />
+                    <span>Dừng</span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={!input.trim()}
+                    className={cn(
+                      "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
+                      input.trim()
+                        ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer active:scale-95"
+                        : "bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
+                    )}
+                    title="Gửi câu hỏi"
+                  >
+                    <SendIcon size={13} animateOnHover />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          </BorderGlow>
         </form>
       </div>
     </div>

@@ -892,7 +892,7 @@ export default function StockChartClient({
                 <div
                   key={comp.symbol}
                   onClick={() => handleSwapComparisonWithPrimary(comp.symbol)}
-                  style={{ borderColor: `${comp.color}80` }}
+                  style={{ borderColor: comp.color }}
                   className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white dark:bg-zinc-900 shadow-2xs shrink-0 cursor-pointer select-none"
                 >
                   <span style={{ color: comp.color }}>{comp.symbol}</span>
@@ -902,7 +902,7 @@ export default function StockChartClient({
                       e.stopPropagation();
                       removeComparisonSymbol(comp.symbol);
                     }}
-                    className="text-slate-400 hover:text-rose-500 transition-colors ml-0.5 cursor-pointer"
+                    className="text-slate-400 hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
                   >
                     <XIcon size={12} animateOnHover />
                   </button>
@@ -1218,7 +1218,7 @@ export default function StockChartClient({
           {onCloseModule && (
             <button
               onClick={onCloseModule}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 text-xs transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-600 hover:border-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:border-rose-600 dark:hover:text-white text-slate-400 border border-slate-200 dark:border-zinc-700 text-xs transition-colors cursor-pointer"
               title="Đóng module Biểu đồ"
             >
               <XIcon size={15} animateOnHover />

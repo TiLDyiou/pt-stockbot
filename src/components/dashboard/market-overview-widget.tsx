@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { formatNumber } from "@/lib/utils/format";
 import {
-  EarthIcon,
   RefreshCwIcon,
   XIcon,
 } from "lucide-animated";
@@ -64,57 +63,11 @@ export function MarketOverviewWidget({
 
   return (
     <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] text-slate-800 dark:text-zinc-200 overflow-hidden select-none">
-      {/* 1. Module Header */}
-      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 shrink-0">
-        <div className="flex items-center gap-2">
-          {dragHandle}
-          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-            <EarthIcon size={15} className="text-emerald-500" animateOnHover />
-          </div>
-          {data?.index && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300">
-              <strong className="text-slate-900 dark:text-white">{data.index.symbol}</strong>
-              <span>{data.index.close?.toFixed(2)}</span>
-              <span
-                className={
-                  data.index.change >= 0 ? "text-emerald-500 font-bold" : "text-rose-500 font-bold"
-                }
-              >
-                {data.index.change >= 0 ? "+" : ""}
-                {data.index.change?.toFixed(2)} ({data.index.changePercent >= 0 ? "+" : ""}
-                {data.index.changePercent?.toFixed(2)}%)
-              </span>
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {onToggleMaximize && (
-            <button
-              onClick={onToggleMaximize}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
-              title={isMaximized ? "Thu nhỏ về bảng chia" : "Mở rộng toàn màn hình"}
-            >
-              {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            </button>
-          )}
-
-          {onCloseModule && (
-            <button
-              onClick={onCloseModule}
-              className="p-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
-              title="Đóng module Tổng quan"
-            >
-              <XIcon size={13} animateOnHover />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Top Navigation Bar (Tabs & Exchange Pills) */}
+      {/* Top Navigation Bar (Tabs, Exchange Selector & Window Controls) */}
       <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border-b border-slate-200 dark:border-zinc-800 shrink-0 gap-2">
         {/* Main Tabs on left */}
         <div className="flex items-center gap-1 text-xs">
+          {dragHandle}
           <button
             type="button"
             onClick={() => setMainTab("bien_dong")}
@@ -164,52 +117,80 @@ export function MarketOverviewWidget({
           </button>
         </div>
 
-        {/* Exchange Selector on right */}
-        <div className="flex items-center gap-1 font-mono text-xs">
-          <button
-            type="button"
-            onClick={() => setExchange("HSX")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
-              exchange === "HSX"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
-            }`}
-          >
-            HSX
-          </button>
-          <button
-            type="button"
-            onClick={() => setExchange("HNX")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
-              exchange === "HNX"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
-            }`}
-          >
-            HNX
-          </button>
-          <button
-            type="button"
-            onClick={() => setExchange("UPCOM")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
-              exchange === "UPCOM"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
-            }`}
-          >
-            UPCOM
-          </button>
-          <button
-            type="button"
-            onClick={() => setExchange("ALL")}
-            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
-              exchange === "ALL"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
-            }`}
-          >
-            TẤT CẢ
-          </button>
+        {/* Exchange Selector & Window Controls on right */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setExchange("HSX")}
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
+                exchange === "HSX"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              HSX
+            </button>
+            <button
+              type="button"
+              onClick={() => setExchange("HNX")}
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
+                exchange === "HNX"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              HNX
+            </button>
+            <button
+              type="button"
+              onClick={() => setExchange("UPCOM")}
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
+                exchange === "UPCOM"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              UPCOM
+            </button>
+            <button
+              type="button"
+              onClick={() => setExchange("ALL")}
+              className={`px-2 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
+                exchange === "ALL"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              TẤT CẢ
+            </button>
+          </div>
+
+          {(onToggleMaximize || onCloseModule) && (
+            <div className="flex items-center gap-1 ml-1 pl-1 border-l border-slate-300 dark:border-zinc-700">
+              {onToggleMaximize && (
+                <button
+                  type="button"
+                  onClick={onToggleMaximize}
+                  className="p-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
+                  title={isMaximized ? "Thu nhỏ về bảng chia" : "Mở rộng toàn màn hình"}
+                >
+                  {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                </button>
+              )}
+
+              {onCloseModule && (
+                <button
+                  type="button"
+                  onClick={onCloseModule}
+                  className="p-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-rose-600 hover:border-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:border-rose-600 dark:hover:text-white text-slate-400 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
+                  title="Đóng module Tổng quan"
+                >
+                  <XIcon size={13} animateOnHover />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

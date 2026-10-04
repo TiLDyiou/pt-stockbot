@@ -216,7 +216,7 @@ function SortableItem({
             e.stopPropagation();
             onRemove(symbol);
           }}
-          className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 dark:text-zinc-600 hover:text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-950 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+          className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 dark:text-zinc-500 hover:text-white hover:bg-rose-600 dark:hover:bg-rose-600 transition-colors invisible group-hover:visible cursor-pointer"
           title="Xóa khỏi watchlist"
         >
           <XIcon size={12} animateOnHover />
@@ -446,7 +446,7 @@ export function WatchlistWidget({
             <button
               type="button"
               onClick={onCloseModule}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer shrink-0"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-600 hover:border-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:border-rose-600 dark:hover:text-white text-slate-400 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer shrink-0"
               title="Đóng module Danh mục theo dõi"
             >
               <XIcon size={14} animateOnHover />
