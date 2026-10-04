@@ -25,6 +25,7 @@ export interface StockChartProps {
   onSelectSymbol?: (sym: string) => void;
   onAddSymbol?: (sym: string) => void;
   onCloseSymbol?: (sym: string) => void;
+  onSwapSymbol?: (oldSym: string, newSym: string) => void;
   isMaximized?: boolean;
   onToggleMaximize?: () => void;
   onCloseModule?: () => void;

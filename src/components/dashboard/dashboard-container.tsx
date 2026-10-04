@@ -188,6 +188,19 @@ export function DashboardContainer({
     }
   };
 
+  const handleSwapChartTab = (oldSym: string, newSym: string) => {
+    const oldUpper = oldSym.toUpperCase();
+    const newUpper = newSym.toUpperCase();
+    const updated = chartTabs.map((t) => (t === oldUpper ? newUpper : t));
+    const deduped = Array.from(new Set(updated.filter((t) => t !== oldUpper)));
+    if (!deduped.includes(newUpper)) {
+      deduped.push(newUpper);
+    }
+    setChartTabs(deduped);
+    persistTabs(deduped);
+    setActiveSymbol(newUpper);
+  };
+
   const handleSwapModules = (sourceId: ModuleId, targetId: ModuleId) => {
     if (sourceId === targetId) return;
     const reorder = (prev: ModuleId[]) => {
@@ -252,6 +265,7 @@ export function DashboardContainer({
             onSelectSymbol={handleSelectSymbol}
             onAddSymbol={handleAddChartTab}
             onCloseSymbol={handleCloseChartTab}
+            onSwapSymbol={handleSwapChartTab}
             isMaximized={maximizedWidget === "chart"}
             onToggleMaximize={() =>
               setMaximizedWidget(maximizedWidget === "chart" ? null : "chart")

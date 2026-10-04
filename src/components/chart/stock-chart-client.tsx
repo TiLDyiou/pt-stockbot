@@ -31,6 +31,7 @@ interface StockChartClientProps {
   onSelectSymbol?: (sym: string) => void;
   onAddSymbol?: (sym: string) => void;
   onCloseSymbol?: (sym: string) => void;
+  onSwapSymbol?: (oldSym: string, newSym: string) => void;
   isMaximized?: boolean;
   onToggleMaximize?: () => void;
   onCloseModule?: () => void;
@@ -65,6 +66,7 @@ export default function StockChartClient({
   onSelectSymbol,
   onAddSymbol: _onAddSymbol,
   onCloseSymbol,
+  onSwapSymbol,
   isMaximized = false,
   onToggleMaximize,
   onCloseModule,
@@ -649,8 +651,10 @@ export default function StockChartClient({
       return [{ symbol: oldPrimary, color: "#a855f7" }, ...updated];
     });
 
-    // 4. Notify parent to switch primary active symbol to targetSymbol
-    if (onSelectSymbol) {
+    // 4. Notify parent to swap active symbol with targetSymbol in-place
+    if (onSwapSymbol) {
+      onSwapSymbol(oldPrimary, targetSymbol);
+    } else if (onSelectSymbol) {
       onSelectSymbol(targetSymbol);
     }
   };
