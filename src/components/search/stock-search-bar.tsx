@@ -144,9 +144,9 @@ export function StockSearchBar({
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Tra cứu mã hoặc giá cổ phiếu"
-          className="w-full pl-8 pr-12 py-1.5 text-xs bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 font-sans transition-all"
+          className="w-full pl-8 pr-12 py-1.5 text-xs bg-slate-100 dark:bg-zinc-900 border-none outline-none focus:outline-none focus:ring-0 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 font-sans transition-all"
         />
-        <span className="absolute right-2.5 text-[10px] font-mono text-slate-400 dark:text-zinc-500 border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 rounded-md hidden sm:inline pointer-events-none">
+        <span className="absolute right-2.5 text-[10px] font-mono text-slate-400 dark:text-zinc-500 bg-slate-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md hidden sm:inline pointer-events-none">
           /
         </span>
       </div>

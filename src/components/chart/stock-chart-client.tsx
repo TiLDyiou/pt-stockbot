@@ -934,7 +934,7 @@ export default function StockChartClient({
                     placeholder="MÃ SO SÁNH..."
                     onChange={(e) => setCompareSymbol(e.target.value)}
                     onKeyDown={handleCompareKeyDown}
-                    className="pl-2.5 pr-7 py-1 text-xs uppercase bg-white dark:bg-zinc-900 border border-emerald-500 rounded-lg w-40 focus:outline-none ring-1 ring-emerald-500 font-mono text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all shadow-xs"
+                    className="pl-2.5 pr-7 py-1 text-xs uppercase bg-slate-100 dark:bg-zinc-800 border-none outline-none focus:outline-none focus:ring-0 rounded-lg w-40 font-mono text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all"
                   />
                   <button
                     type="submit"
@@ -1172,24 +1172,28 @@ export default function StockChartClient({
           </div>
 
           {/* SMA Overlays */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 font-mono">
             <button
+              type="button"
               onClick={() => setShowSma20(!showSma20)}
-              className={`px-2.5 py-1 rounded-lg text-xs border transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                 showSma20
-                  ? "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 border-slate-200 dark:border-zinc-700 line-through"
+                  ? "bg-emerald-600 text-white shadow-xs border-emerald-600"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 border-slate-200 dark:border-zinc-700"
               }`}
+              title="Bật/tắt đường chỉ báo SMA20"
             >
               SMA20
             </button>
             <button
+              type="button"
               onClick={() => setShowSma50(!showSma50)}
-              className={`px-2.5 py-1 rounded-lg text-xs border transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                 showSma50
-                  ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 border-slate-200 dark:border-zinc-700 line-through"
+                  ? "bg-emerald-600 text-white shadow-xs border-emerald-600"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 border-slate-200 dark:border-zinc-700"
               }`}
+              title="Bật/tắt đường chỉ báo SMA50"
             >
               SMA50
             </button>

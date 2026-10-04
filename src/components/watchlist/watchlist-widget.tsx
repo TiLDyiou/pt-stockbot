@@ -431,7 +431,7 @@ export function WatchlistWidget({
               placeholder="+ THÊM MÃ CỔ PHIẾU"
               value={newTicker}
               onChange={(e) => setNewTicker(e.target.value)}
-              className="px-3 py-1.5 text-xs uppercase bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg w-44 sm:w-52 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono text-slate-900 dark:text-white placeholder:text-[10px] sm:placeholder:text-[11px] placeholder:font-mono placeholder:text-slate-400 shrink-0"
+              className="px-3 py-1.5 text-xs uppercase bg-slate-100 dark:bg-zinc-800 border-none outline-none focus:outline-none focus:ring-0 rounded-lg w-44 sm:w-52 font-mono text-slate-900 dark:text-white placeholder:text-[10px] sm:placeholder:text-[11px] placeholder:font-mono placeholder:text-slate-400 shrink-0"
             />
             <button
               type="submit"
