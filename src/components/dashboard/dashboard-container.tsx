@@ -56,13 +56,12 @@ export function DashboardContainer({
     setIsMounted(true);
   }, []);
 
-  // Handle external trigger to add a chart (e.g. from chat ticker chip)
+  // Handle external trigger to add a chart
   useEffect(() => {
     if (!externalAddChartTicker || !isMounted) return;
     const sym = externalAddChartTicker.trim().toUpperCase();
 
     setWidgets((prev) => {
-      // If widget already exists, keep it or focus it
       const existing = prev.find((w) => w.type === "chart" && w.symbol === sym);
       if (existing) return prev;
 
@@ -150,7 +149,6 @@ export function DashboardContainer({
   };
 
   const handleSelectSymbol = (sym: string) => {
-    // Check if chart widget already exists
     const exists = widgets.some((w) => w.type === "chart" && w.symbol === sym);
     if (!exists) {
       const newWidget: DashboardWidget = {
@@ -169,20 +167,20 @@ export function DashboardContainer({
   if (!isMounted) {
     return (
       <div className="flex items-center justify-center h-full text-xs text-slate-400">
-        Đang khởi tạo bảng điều khiển...
+        Đang tải bảng điều khiển...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      {/* Top Dashboard Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-full rounded-2xl glass-surface overflow-hidden shadow-ambient-sm border border-black/[0.06] dark:border-white/[0.08]">
+      {/* Top Glass Toolbar */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.05] dark:border-white/[0.07] bg-white/40 dark:bg-white/[0.02]">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <span className="font-semibold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Bảng điều khiển
           </span>
-          <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
             {widgets.length} panels
           </span>
         </div>
@@ -190,13 +188,13 @@ export function DashboardContainer({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsAddOpen(!isAddOpen)}
-            className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium transition-colors"
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-ambient-sm transition-all duration-300 active:scale-[0.96]"
           >
-            + Thêm Panel
+            <span>+ Thêm Panel</span>
           </button>
           <button
             onClick={handleResetLayout}
-            className="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 rounded transition-colors"
+            className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] border border-black/[0.04] dark:border-white/[0.08] text-xs font-medium text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-[0.96]"
             title="Khôi phục bố cục mặc định"
           >
             Khôi phục
@@ -204,48 +202,48 @@ export function DashboardContainer({
         </div>
       </div>
 
-      {/* Add Widget Dropdown/Form */}
+      {/* Expanded Add Drawer */}
       {isAddOpen && (
-        <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-4 text-xs animate-in fade-in duration-150">
-          <form onSubmit={handleAddChart} className="flex items-center gap-2">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              Thêm Biểu đồ:
+        <div className="p-3 bg-slate-50/90 dark:bg-[#0c1017] border-b border-black/[0.05] dark:border-white/[0.07] flex flex-wrap items-center gap-3 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+          <form onSubmit={handleAddChart} className="flex items-center gap-1.5">
+            <span className="font-medium text-slate-600 dark:text-slate-300">
+              Biểu đồ:
             </span>
             <input
               type="text"
-              placeholder="Mã CP (VD: HPG)"
+              placeholder="Mã CP (HPG)"
               value={newChartTicker}
               onChange={(e) => setNewChartTicker(e.target.value)}
-              className="px-2 py-1 uppercase bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded w-28 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="px-2.5 py-1 text-xs uppercase bg-white dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.1] rounded-lg w-28 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
             />
             <button
               type="submit"
               disabled={!newChartTicker.trim()}
-              className="px-2 py-1 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 rounded font-medium disabled:opacity-50"
+              className="px-2.5 py-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-medium disabled:opacity-40"
             >
               Thêm
             </button>
           </form>
 
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-white/10" />
 
           <button
             onClick={() => handleAddWidgetType("watchlist")}
-            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded"
+            className="px-3 py-1 rounded-lg bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] border border-black/[0.05] dark:border-white/[0.08] text-slate-700 dark:text-slate-200"
           >
             + Watchlist
           </button>
 
           <button
             onClick={() => handleAddWidgetType("market_overview")}
-            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded"
+            className="px-3 py-1 rounded-lg bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] border border-black/[0.05] dark:border-white/[0.08] text-slate-700 dark:text-slate-200"
           >
             + Tổng quan thị trường
           </button>
 
           <button
             onClick={() => setIsAddOpen(false)}
-            className="ml-auto text-slate-400 hover:text-slate-600"
+            className="ml-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           >
             Đóng
           </button>
@@ -256,10 +254,10 @@ export function DashboardContainer({
       <div className="flex-1 overflow-y-auto p-4">
         {widgets.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
-            <p className="text-slate-400 text-sm mb-3">Chưa có panel nào hiển thị</p>
+            <p className="text-slate-400 text-xs mb-3">Chưa có panel nào hiển thị</p>
             <button
               onClick={handleResetLayout}
-              className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs"
+              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold"
             >
               Khôi phục mặc định
             </button>

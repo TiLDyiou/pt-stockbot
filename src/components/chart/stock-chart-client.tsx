@@ -92,13 +92,12 @@ export default function StockChartClient({
     const container = chartContainerRef.current;
     if (!container) return;
 
-    // Clear previous elements if any
     container.innerHTML = "";
 
     const isDark = document.documentElement.classList.contains("dark");
-    const bgColor = isDark ? "#0f172a" : "#ffffff";
-    const textColor = isDark ? "#94a3b8" : "#475569";
-    const gridColor = isDark ? "#1e293b" : "#f1f5f9";
+    const bgColor = isDark ? "#0c1017" : "#ffffff";
+    const textColor = isDark ? "#64748b" : "#475569";
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.03)";
 
     const chart = createChart(container, {
       width: container.clientWidth || 600,
@@ -106,7 +105,8 @@ export default function StockChartClient({
       layout: {
         background: { type: ColorType.Solid, color: bgColor },
         textColor: textColor,
-        fontSize: 12,
+        fontSize: 11,
+        fontFamily: "'JetBrains Mono', monospace",
       },
       grid: {
         vertLines: { color: gridColor },
@@ -116,10 +116,10 @@ export default function StockChartClient({
         mode: CrosshairMode.Normal,
       },
       rightPriceScale: {
-        borderColor: gridColor,
+        borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
       },
       timeScale: {
-        borderColor: gridColor,
+        borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
         timeVisible: true,
         secondsVisible: false,
       },
@@ -127,7 +127,7 @@ export default function StockChartClient({
 
     chartInstanceRef.current = chart;
 
-    // Volume Series at bottom
+    // Volume Series
     const volumeSeries = chart.addHistogramSeries({
       priceFormat: { type: "volume" },
       priceScaleId: "volume",
@@ -137,26 +137,26 @@ export default function StockChartClient({
     });
     volumeSeriesRef.current = volumeSeries;
 
-    // Candlestick Series
+    // Candlestick Series: Vietnam standard
     const candleSeries = chart.addCandlestickSeries({
-      upColor: "#10b981", // Vietnamese green for up
-      downColor: "#ef4444", // Red for down
+      upColor: "#10b981", // Crisp Emerald
+      downColor: "#f43f5e", // Neon Rose
       borderVisible: false,
       wickUpColor: "#10b981",
-      wickDownColor: "#ef4444",
+      wickDownColor: "#f43f5e",
     });
     candleSeriesRef.current = candleSeries;
 
     // SMA Series
     const sma20 = chart.addLineSeries({
-      color: "#3b82f6",
+      color: "#38bdf8",
       lineWidth: 1,
       title: "SMA 20",
     });
     sma20SeriesRef.current = sma20;
 
     const sma50 = chart.addLineSeries({
-      color: "#f97316",
+      color: "#f59e0b",
       lineWidth: 1,
       title: "SMA 50",
     });
@@ -228,7 +228,7 @@ export default function StockChartClient({
         candles.map((c) => ({
           time: c.time as any,
           value: c.volume,
-          color: c.close >= c.open ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)",
+          color: c.close >= c.open ? "rgba(16, 185, 129, 0.35)" : "rgba(244, 63, 94, 0.35)",
         }))
       );
     }
@@ -283,7 +283,7 @@ export default function StockChartClient({
       if (chartInstanceRef.current) {
         if (!compareSeriesRef.current) {
           compareSeriesRef.current = chartInstanceRef.current.addLineSeries({
-            color: "#a855f7",
+            color: "#c084fc",
             lineWidth: 2,
             title: `${sym} (%)`,
             priceScaleId: "compare",
@@ -313,7 +313,6 @@ export default function StockChartClient({
     }
   };
 
-  // Current or hover stats
   const latestCandle = candles[candles.length - 1];
   const displayData = hoveredData || (latestCandle ? {
     time: latestCandle.time,
@@ -328,90 +327,106 @@ export default function StockChartClient({
         : 0,
   } : null);
 
+  const isUp = (displayData?.changePct || 0) >= 0;
+
   return (
-    <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-slate-800 dark:text-slate-100 shadow-sm">
-      {/* Top Header: Symbol Info & Indicators Toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+    <div className="flex flex-col h-full w-full select-none">
+      {/* Top Header: Symbol Info & Indicators Segmented Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-black/[0.04] dark:border-white/[0.06]">
+        {/* Symbol badge & Price */}
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-            {symbol}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-base font-extrabold font-mono tracking-wider text-slate-900 dark:text-white">
+              {symbol}
+            </span>
+            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+              HOSE
+            </span>
+          </div>
+
           {displayData && (
             <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">
                 {formatPrice(displayData.close)}
               </span>
               <span
-                className={
-                  (displayData.changePct || 0) >= 0
-                    ? "text-emerald-600 dark:text-emerald-400 font-semibold"
-                    : "text-rose-600 dark:text-rose-400 font-semibold"
-                }
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                  isUp
+                    ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/20"
+                    : "bg-rose-500/15 text-rose-500 border border-rose-500/20"
+                }`}
               >
                 {formatPercent(displayData.changePct)}
               </span>
-              <span className="text-slate-400 hidden sm:inline">
+              <span className="text-slate-400 text-[11px] hidden sm:inline">
                 KL: {formatVolume(displayData.volume)}
               </span>
             </div>
           )}
         </div>
 
-        {/* Timeframe & Overlays */}
-        <div className="flex items-center gap-1 text-xs">
-          {(["1M", "3M", "6M", "1Y"] as Timeframe[]).map((tf) => (
+        {/* Timeframe Segmented Control & Indicator Toggles */}
+        <div className="flex items-center gap-2 text-xs">
+          {/* Segmented Timeframe Pill */}
+          <div className="flex p-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.08]">
+            {(["1M", "3M", "6M", "1Y"] as Timeframe[]).map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono transition-all duration-200 ${
+                  timeframe === tf
+                    ? "bg-white dark:bg-white/20 text-slate-950 dark:text-white font-bold shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+
+          {/* SMA Toggles */}
+          <div className="flex items-center gap-1">
             <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`px-2 py-1 rounded transition-colors ${
-                timeframe === tf
-                  ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 font-semibold"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+              onClick={() => setShowSma20(!showSma20)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono transition-all duration-200 ${
+                showSma20
+                  ? "bg-sky-500/15 text-sky-500 border border-sky-500/30 font-semibold"
+                  : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 opacity-60"
               }`}
             >
-              {tf}
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              SMA20
             </button>
-          ))}
-
-          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
-
-          <button
-            onClick={() => setShowSma20(!showSma20)}
-            className={`px-2 py-1 rounded transition-colors ${
-              showSma20
-                ? "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold border border-blue-400"
-                : "text-slate-400 line-through"
-            }`}
-          >
-            SMA20
-          </button>
-          <button
-            onClick={() => setShowSma50(!showSma50)}
-            className={`px-2 py-1 rounded transition-colors ${
-              showSma50
-                ? "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-semibold border border-orange-400"
-                : "text-slate-400 line-through"
-            }`}
-          >
-            SMA50
-          </button>
+            <button
+              onClick={() => setShowSma50(!showSma50)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono transition-all duration-200 ${
+                showSma50
+                  ? "bg-amber-500/15 text-amber-500 border border-amber-500/30 font-semibold"
+                  : "bg-slate-100 dark:bg-white/[0.04] text-slate-400 opacity-60"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              SMA50
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Detail Bar: O H L C */}
+      {/* Floating Metrics Bar: O H L C */}
       {displayData && (
-        <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 py-1 font-mono">
+        <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 py-1.5 font-mono">
           <span>Ngày: {displayData.time}</span>
-          <span>Mở: {formatPrice(displayData.open)}</span>
-          <span>Cao: {formatPrice(displayData.high)}</span>
-          <span>Thấp: {formatPrice(displayData.low)}</span>
-          <span>Đóng: {formatPrice(displayData.close)}</span>
+          <span>O: {formatPrice(displayData.open)}</span>
+          <span>H: {formatPrice(displayData.high)}</span>
+          <span>L: {formatPrice(displayData.low)}</span>
+          <span>C: {formatPrice(displayData.close)}</span>
+
           {activeCompareSymbol && (
-            <span className="text-purple-600 dark:text-purple-400 font-bold ml-auto flex items-center gap-1">
+            <span className="text-purple-400 font-bold ml-auto flex items-center gap-1">
               So sánh: {activeCompareSymbol}
               <button
                 onClick={removeComparison}
-                className="text-xs hover:text-rose-500 font-normal ml-1"
+                className="text-xs hover:text-rose-400 ml-1"
                 title="Bỏ so sánh"
               >
                 ✕
@@ -421,21 +436,21 @@ export default function StockChartClient({
         </div>
       )}
 
-      {/* Chart Canvas Area */}
-      <div className="relative flex-1 min-h-[320px] w-full mt-1">
+      {/* TradingView Canvas */}
+      <div className="relative flex-1 min-h-[320px] w-full rounded-xl overflow-hidden mt-1">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-slate-900/70 z-10">
-            <span className="text-sm text-slate-500 animate-pulse">
-              Đang tải nến {symbol}...
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-[#0c1017]/80 backdrop-blur-sm z-10">
+            <span className="text-xs font-mono text-emerald-500 animate-pulse">
+              Đang tải dữ liệu {symbol}...
             </span>
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-900/90 z-10 p-4">
-            <p className="text-rose-500 text-sm mb-2">{error}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-[#0c1017]/90 z-10 p-4">
+            <p className="text-rose-500 text-xs mb-2">{error}</p>
             <button
               onClick={fetchCandles}
-              className="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded text-xs hover:bg-slate-300"
+              className="px-3 py-1 bg-slate-200 dark:bg-white/10 rounded-full text-xs font-medium"
             >
               Thử lại
             </button>
@@ -444,25 +459,28 @@ export default function StockChartClient({
         <div ref={chartContainerRef} className="h-full w-full" />
       </div>
 
-      {/* Bottom Bar: Compare symbol input */}
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <form onSubmit={handleAddComparison} className="flex items-center gap-2">
+      {/* Bottom Bar: Compare symbol input pill */}
+      <div className="pt-2 mt-1 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-xs">
+        <form onSubmit={handleAddComparison} className="flex items-center gap-1.5">
           <input
             type="text"
-            placeholder="So sánh mã (VD: VCB)"
+            placeholder="So sánh mã (VCB)"
             value={compareSymbol}
             onChange={(e) => setCompareSymbol(e.target.value)}
-            className="px-2 py-0.5 text-xs uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded w-36 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="px-3 py-1 text-xs uppercase bg-slate-100 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] rounded-full w-36 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
           />
           <button
             type="submit"
             disabled={compareLoading || !compareSymbol.trim()}
-            className="px-2 py-0.5 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded disabled:opacity-50"
+            className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] border border-black/[0.04] dark:border-white/[0.08] text-slate-700 dark:text-slate-300 transition-all active:scale-[0.96] disabled:opacity-40"
           >
             {compareLoading ? "..." : "+ So sánh %"}
           </button>
         </form>
-        <span className="text-[10px] text-slate-400">TradingView Lightweight Charts</span>
+
+        <span className="text-[10px] font-mono text-slate-400">
+          TradingView Lightweight Charts
+        </span>
       </div>
     </div>
   );

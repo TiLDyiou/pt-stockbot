@@ -110,47 +110,54 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50/50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+    <div className="flex flex-col h-full rounded-2xl glass-surface overflow-hidden shadow-ambient-sm border border-black/[0.06] dark:border-white/[0.08]">
+      {/* Sleek Subheader */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.05] dark:border-white/[0.07] bg-white/40 dark:bg-white/[0.02]">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <h2 className="font-bold text-sm tracking-tight text-slate-800 dark:text-slate-100">
-            Trợ lý Phân tích Cổ phiếu
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
+          <h2 className="font-semibold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            Hội thoại Phân tích
           </h2>
         </div>
 
         <button
           onClick={handleClearHistory}
           disabled={messages.length === 0}
-          className="text-xs text-slate-500 hover:text-rose-500 transition-colors disabled:opacity-30 disabled:hover:text-slate-500"
-          title="Xóa lịch sử trò chuyện"
+          className="text-[11px] font-medium text-slate-400 hover:text-rose-500 transition-colors disabled:opacity-30 disabled:hover:text-slate-400"
+          title="Xóa phiên làm việc"
         >
           Xóa lịch sử
         </button>
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-slate-400">
-            <div className="text-3xl mb-2">💬</div>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
-              Bắt đầu phân tích cổ phiếu cùng AI
-            </p>
-            <p className="text-xs max-w-xs mb-4">
-              Hỏi đáp trực tiếp về thị giá, chỉ báo kỹ thuật, báo cáo tài chính hoặc so sánh cổ phiếu.
+          <div className="flex flex-col items-center justify-center h-full text-center p-6">
+            <div className="relative mb-4 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/20 text-emerald-500 text-2xl shadow-ambient-sm">
+              ✨
+              <div className="absolute inset-0 rounded-2xl bg-emerald-500/10 blur-xl -z-10" />
+            </div>
+
+            <h3 className="text-base font-bold tracking-tight text-slate-900 dark:text-white mb-1">
+              Phân tích Thị trường & Cổ phiếu
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-6 leading-relaxed">
+              Trợ lý thông minh khai thác dữ liệu trực tiếp từ HOSE, HNX, UPCoM với chỉ báo kỹ thuật và tài chính chuyên sâu.
             </p>
 
-            {/* Suggested prompts */}
-            <div className="flex flex-wrap gap-2 justify-center max-w-sm">
+            {/* Suggested prompts pills with button-in-button styling */}
+            <div className="flex flex-col gap-2 w-full max-w-xs">
               {SUGGESTED_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => handlePromptClick(prompt)}
-                  className="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-700 dark:text-slate-200 hover:border-emerald-500 transition-colors shadow-sm"
+                  className="group flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/70 dark:hover:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] text-xs font-medium text-slate-700 dark:text-slate-200 transition-all duration-200 active:scale-[0.98]"
                 >
-                  {prompt}
+                  <span>{prompt}</span>
+                  <span className="w-5 h-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[10px] text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all">
+                    ↗
+                  </span>
                 </button>
               ))}
             </div>
@@ -168,15 +175,17 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Watchlist Chips & Actions */}
-      <div className="px-4 py-2 bg-white/70 dark:bg-slate-900/70 border-t border-slate-200/60 dark:border-slate-800/60">
+      {/* Watchlist Quick Actions Bar */}
+      <div className="px-4 py-2 bg-slate-50/60 dark:bg-white/[0.02] border-t border-black/[0.04] dark:border-white/[0.06]">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <span className="text-[11px] text-slate-400 shrink-0">Hỏi nhanh:</span>
+          <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400 shrink-0">
+            Hỏi nhanh:
+          </span>
           {watchlist.slice(0, 8).map((ticker) => (
             <button
               key={ticker}
               onClick={() => handlePromptClick(`Phân tích ${ticker}`)}
-              className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-mono text-xs font-semibold shrink-0 transition-colors"
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] border border-black/[0.04] dark:border-white/[0.06] text-slate-800 dark:text-slate-200 font-mono text-xs font-semibold shrink-0 transition-all active:scale-[0.96]"
             >
               {ticker}
             </button>
@@ -184,41 +193,50 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
           {watchlist.length >= 2 && (
             <button
               onClick={handleCompareWatchlist}
-              className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 text-xs shrink-0 font-medium transition-colors"
+              className="group flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs shrink-0 font-medium transition-all active:scale-[0.96]"
             >
-              So sánh watchlist
+              <span>So sánh Watchlist</span>
+              <span className="text-[10px] group-hover:translate-x-0.5 transition-transform">
+                →
+              </span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Input Box */}
-      <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      {/* Island Input Bar with Nested Button */}
+      <div className="p-3 bg-white/70 dark:bg-white/[0.02] border-t border-black/[0.05] dark:border-white/[0.07]">
+        <form onSubmit={handleSubmit} className="relative flex items-center">
           <input
             type="text"
             value={input}
             onChange={handleInputChange}
-            placeholder="Đặt câu hỏi về cổ phiếu hoặc thị trường..."
-            className="flex-1 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100"
+            placeholder="Hỏi về mã cổ phiếu, chỉ báo kỹ thuật, P/E..."
+            className="w-full pl-4 pr-24 py-3 text-xs sm:text-sm bg-slate-100/80 dark:bg-[#0c1017] border border-black/[0.06] dark:border-white/[0.08] rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 shadow-inner"
           />
-          {isLoading ? (
-            <button
-              type="button"
-              onClick={stop}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs rounded-lg transition-colors"
-            >
-              Dừng
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors"
-            >
-              Gửi
-            </button>
-          )}
+
+          <div className="absolute right-1.5 flex items-center">
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={stop}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-xl transition-all shadow-sm active:scale-[0.96]"
+              >
+                Dừng
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="group flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-semibold text-xs rounded-xl transition-all shadow-ambient-sm active:scale-[0.96]"
+              >
+                <span>Gửi</span>
+                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] group-hover:translate-x-0.5 transition-transform">
+                  ↑
+                </span>
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>

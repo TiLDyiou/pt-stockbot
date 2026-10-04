@@ -23,7 +23,6 @@ export function ChatMessageItem({
     if (isUser || !message.content) return [];
     const found = new Set<string>();
     for (const t of watchlistTickers) {
-      // Regex check word boundary
       const regex = new RegExp(`\\b${t}\\b`, "i");
       if (regex.test(message.content)) {
         found.add(t);
@@ -35,23 +34,23 @@ export function ChatMessageItem({
   const getToolDisplayName = (toolName: string, args: any) => {
     switch (toolName) {
       case "get_quote":
-        return `Đang lấy báo giá ${args?.ticker || ""}…`;
+        return `Đang truy vấn báo giá ${args?.ticker || ""}`;
       case "get_history":
-        return `Đang tải lịch sử giá ${args?.ticker || ""}…`;
+        return `Đang tổng hợp dữ liệu nến ${args?.ticker || ""}`;
       case "get_ai_context":
-        return `Đang tính toán chỉ báo kỹ thuật ${args?.ticker || ""}…`;
+        return `Đang phân tích chỉ báo kỹ thuật ${args?.ticker || ""}`;
       case "get_fundamentals":
-        return `Đang đọc báo cáo tài chính ${args?.ticker || ""}…`;
+        return `Đang đọc báo cáo tài chính ${args?.ticker || ""}`;
       case "get_market_overview":
-        return `Đang lấy dữ liệu thị trường…`;
+        return `Đang đọc diễn biến toàn thị trường`;
       case "compare_symbols":
-        return `Đang so sánh ${(args?.tickers || []).join(", ")}…`;
+        return `Đang đối sánh ${(args?.tickers || []).join(", ")}`;
       case "search_ticker":
-        return `Đang tra cứu mã ${args?.query || ""}…`;
+        return `Đang tra cứu cơ sở dữ liệu mã ${args?.query || ""}`;
       case "get_news":
-        return `Đang tìm tin tức…`;
+        return `Đang duyệt tin tức tài chính`;
       default:
-        return `Đang xử lý ${toolName}…`;
+        return `Đang xử lý ${toolName}`;
     }
   };
 
@@ -59,86 +58,102 @@ export function ChatMessageItem({
     <div
       className={`flex flex-col mb-4 ${
         isUser ? "items-end" : "items-start"
-      } animate-in fade-in duration-200`}
+      } animate-in fade-in slide-in-from-bottom-2 duration-300`}
     >
-      <div className="flex items-center gap-1.5 mb-1 px-1 text-[11px] text-slate-400">
-        <span>{isUser ? "Bạn" : "PhuocThinh AI"}</span>
+      {/* Role Eyebrow Tag */}
+      <div className="flex items-center gap-1.5 mb-1 px-2 text-[10px] font-mono tracking-widest uppercase text-slate-400">
+        <span>{isUser ? "Nhà đầu tư" : "Trợ lý Phân tích"}</span>
+        {!isUser && (
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        )}
       </div>
 
-      {/* Message bubble */}
-      <div
-        className={`max-w-[90%] md:max-w-[85%] rounded-2xl p-3.5 text-xs sm:text-sm leading-relaxed ${
-          isUser
-            ? "bg-emerald-600 text-white rounded-tr-none shadow-sm"
-            : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-tl-none shadow-sm"
-        }`}
-      >
-        {/* Tool invocation status */}
-        {message.toolInvocations && message.toolInvocations.length > 0 && (
-          <div className="mb-2 space-y-1">
-            {message.toolInvocations.map((tool) => (
-              <div
-                key={tool.toolCallId}
-                className="flex items-center gap-2 text-xs py-1 px-2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono"
-              >
-                {tool.state === "result" ? (
-                  <span className="text-emerald-500">✓</span>
-                ) : (
-                  <span className="animate-spin text-slate-400">⟳</span>
-                )}
-                <span>{getToolDisplayName(tool.toolName, tool.args)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Content markdown */}
-        {isUser ? (
+      {/* Message Bubble: Double-Bezel Architecture */}
+      {isUser ? (
+        <div className="max-w-[88%] rounded-2xl rounded-tr-none px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-ambient-sm text-xs sm:text-sm font-medium leading-relaxed">
           <div className="whitespace-pre-wrap">{message.content}</div>
-        ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                table: ({ _node, ...props }: any) => (
-                  <div className="overflow-x-auto my-2">
-                    <table
-                      className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-xs text-left"
+        </div>
+      ) : (
+        <div className="max-w-[94%] md:max-w-[90%] double-bezel-shell">
+          <div className="double-bezel-core p-4 text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+            {/* Tool Execution Pulse Badge */}
+            {message.toolInvocations && message.toolInvocations.length > 0 && (
+              <div className="mb-3 space-y-1.5">
+                {message.toolInvocations.map((tool) => (
+                  <div
+                    key={tool.toolCallId}
+                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06] text-xs font-mono"
+                  >
+                    {tool.state === "result" ? (
+                      <span className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-500 font-bold text-[10px]">
+                        ✓
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/20 text-amber-500 font-bold text-[10px] animate-spin">
+                        ⟳
+                      </span>
+                    )}
+                    <span className="text-slate-600 dark:text-slate-300 text-[11px]">
+                      {getToolDisplayName(tool.toolName, tool.args)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Markdown Body */}
+            <div className="prose prose-sm dark:prose-invert max-w-none break-words font-sans space-y-2">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  table: ({ _node, ...props }: any) => (
+                    <div className="overflow-x-auto my-3 rounded-xl border border-black/[0.06] dark:border-white/[0.08]">
+                      <table
+                        className="min-w-full divide-y divide-slate-200 dark:divide-white/[0.06] text-xs text-left"
+                        {...props}
+                      />
+                    </div>
+                  ),
+                  th: ({ _node, ...props }: any) => (
+                    <th
+                      className="px-3 py-2 bg-slate-50 dark:bg-white/[0.03] font-semibold text-slate-900 dark:text-white"
                       {...props}
                     />
-                  </div>
-                ),
-                th: ({ _node, ...props }: any) => (
-                  <th
-                    className="px-2 py-1.5 bg-slate-100 dark:bg-slate-800 font-semibold"
-                    {...props}
-                  />
-                ),
-                td: ({ _node, ...props }: any) => (
-                  <td
-                    className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-800"
-                    {...props}
-                  />
-                ),
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+                  ),
+                  td: ({ _node, ...props }: any) => (
+                    <td
+                      className="px-3 py-2 border-b border-black/[0.03] dark:border-white/[0.04] text-slate-700 dark:text-slate-300 font-mono text-[11px]"
+                      {...props}
+                    />
+                  ),
+                  p: ({ _node, ...props }: any) => (
+                    <p className="mb-2 last:mb-0 leading-relaxed" {...props} />
+                  ),
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Suggested chart chips below assistant message */}
+      {/* Suggested Chart Interactive Island Chips */}
       {!isUser && matchedTickers.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 mt-1.5 px-1">
-          <span className="text-[11px] text-slate-400">Xem nhanh:</span>
+        <div className="flex flex-wrap items-center gap-1.5 mt-2 px-1">
+          <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400">
+            Xem nến:
+          </span>
           {matchedTickers.map((ticker) => (
             <button
               key={ticker}
               onClick={() => onOpenChart && onOpenChart(ticker)}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors"
+              className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition-all duration-300 active:scale-[0.97]"
             >
-              📈 Xem biểu đồ {ticker}
+              <span className="font-mono font-bold tracking-wide">{ticker}</span>
+              <span className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] group-hover:translate-x-0.5 transition-transform">
+                ↗
+              </span>
             </button>
           ))}
         </div>

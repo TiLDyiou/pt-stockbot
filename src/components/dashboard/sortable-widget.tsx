@@ -60,45 +60,49 @@ export function SortableWidget({
       style={style}
       className={`${getColSpanClass(
         widget.size
-      )} flex flex-col transition-all duration-200`}
+      )} flex flex-col transition-all duration-300 double-bezel-shell`}
     >
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-b-0 border-slate-200 dark:border-slate-700 rounded-t-lg text-xs">
-        {/* Drag handle & Title */}
-        <div className="flex items-center gap-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 px-1"
-            title="Kéo để di chuyển widget"
-          >
-            ⋮⋮
-          </button>
-          <span className="font-semibold text-slate-700 dark:text-slate-200">
-            {widget.title}
-          </span>
+      <div className="double-bezel-core flex flex-col h-full overflow-hidden">
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50/80 dark:bg-white/[0.02] border-b border-black/[0.04] dark:border-white/[0.06] text-xs">
+          {/* Drag handle & Title */}
+          <div className="flex items-center gap-2">
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1 py-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              title="Kéo thả để sắp xếp"
+            >
+              ⋮⋮
+            </button>
+            <span className="font-semibold text-xs tracking-tight text-slate-800 dark:text-slate-200">
+              {widget.title}
+            </span>
+          </div>
+
+          {/* Action pills: Resize & Close */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={cycleSize}
+              className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] border border-black/[0.04] dark:border-white/[0.08] text-[10px] font-mono text-slate-600 dark:text-slate-300 transition-all active:scale-[0.96]"
+              title="Đổi kích thước card (1x / 2x / Full)"
+            >
+              {widget.size === "single" ? "1x" : widget.size === "double" ? "2x" : "Full"}
+            </button>
+            <button
+              onClick={() => onRemove(widget.id)}
+              className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all text-xs"
+              title="Đóng widget"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        {/* Actions: Resize & Close */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={cycleSize}
-            className="text-[10px] px-1.5 py-0.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-50"
-            title="Thay đổi kích thước (1 cột / 2 cột / full)"
-          >
-            {widget.size === "single" ? "1x" : widget.size === "double" ? "2x" : "Full"}
-          </button>
-          <button
-            onClick={() => onRemove(widget.id)}
-            className="text-slate-400 hover:text-rose-500 font-bold px-1"
-            title="Đóng widget"
-          >
-            ✕
-          </button>
+        {/* Inner Card Content */}
+        <div className="flex-1 p-3 overflow-hidden bg-white/50 dark:bg-transparent">
+          {children}
         </div>
-      </div>
-
-      <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-b-lg overflow-hidden shadow-sm">
-        {children}
       </div>
     </div>
   );

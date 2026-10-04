@@ -51,7 +51,7 @@ function SortableItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   };
 
   const isUp = (quote?.changePct || 0) >= 0;
@@ -60,48 +60,51 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 transition-colors text-xs"
+      className="group flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06] hover:border-emerald-500/30 dark:hover:border-emerald-500/40 hover:bg-slate-100/70 dark:hover:bg-white/[0.06] transition-all duration-200 text-xs"
     >
       {/* Drag handle & Symbol */}
       <div className="flex items-center gap-2">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 px-0.5"
-          title="Kéo để sắp xếp"
+          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1 py-0.5 rounded"
+          title="Kéo thả sắp xếp"
         >
           ⋮⋮
         </button>
         <button
           onClick={() => onSelect(symbol)}
-          className="font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-500 font-mono text-sm tracking-wide"
+          className="font-bold text-slate-900 dark:text-white hover:text-emerald-500 font-mono text-xs tracking-wider"
         >
           {symbol}
         </button>
       </div>
 
       {/* Sparkline mini */}
-      <div className="hidden sm:block cursor-pointer" onClick={() => onSelect(symbol)}>
-        <SparklineSvg data={sparkline || []} width={70} height={20} />
+      <div
+        className="hidden sm:block cursor-pointer opacity-85 hover:opacity-100 transition-opacity"
+        onClick={() => onSelect(symbol)}
+      >
+        <SparklineSvg data={sparkline || []} width={75} height={20} />
       </div>
 
       {/* Price & Change */}
       <div className="flex items-center gap-3">
         {quote ? (
           <div className="text-right font-mono">
-            <div className="font-semibold text-slate-800 dark:text-slate-200">
+            <div className="font-semibold text-slate-900 dark:text-white">
               {formatPrice(quote.price)}
             </div>
             <div
-              className={`text-[11px] ${
-                isUp ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+              className={`text-[10px] font-medium ${
+                isUp ? "text-emerald-500" : "text-rose-500"
               }`}
             >
               {formatPercent(quote.changePct)}
             </div>
           </div>
         ) : (
-          <div className="text-slate-400 text-[10px]">Đang tải...</div>
+          <div className="text-slate-400 text-[10px] font-mono animate-pulse">...</div>
         )}
 
         <button
@@ -109,7 +112,7 @@ function SortableItem({
             e.stopPropagation();
             onRemove(symbol);
           }}
-          className="text-slate-400 hover:text-rose-500 p-1 rounded"
+          className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all text-[11px]"
           title="Xóa khỏi watchlist"
         >
           ✕
@@ -226,24 +229,30 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-sm">
+    <div className="flex flex-col h-full select-none">
       {/* Header & Add form */}
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
-        <h3 className="font-semibold text-xs uppercase tracking-wider text-slate-500">
-          Danh mục theo dõi ({tickers.length}/20)
-        </h3>
+      <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-black/[0.04] dark:border-white/[0.06]">
+        <div className="flex items-center gap-1.5">
+          <span className="font-semibold text-xs tracking-wider uppercase text-slate-500">
+            Mục theo dõi
+          </span>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-400">
+            {tickers.length}/20
+          </span>
+        </div>
+
         <form onSubmit={handleAddTicker} className="flex items-center gap-1">
           <input
             type="text"
-            placeholder="Thêm mã (VD: SSI)"
+            placeholder="Mã CP (SSI)"
             value={newTicker}
             onChange={(e) => setNewTicker(e.target.value)}
-            className="px-2 py-0.5 text-xs uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded w-28 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="px-2.5 py-1 text-xs uppercase bg-slate-100 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] rounded-lg w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
           />
           <button
             type="submit"
             disabled={!newTicker.trim()}
-            className="px-2 py-0.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold disabled:opacity-50"
+            className="w-6 h-6 flex items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs disabled:opacity-40 transition-all active:scale-[0.96]"
           >
             +
           </button>
@@ -253,8 +262,8 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
       {/* Tickers list sortable */}
       <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[340px]">
         {tickers.length === 0 ? (
-          <p className="text-center text-xs text-slate-400 py-6">
-            Danh mục đang trống. Nhập mã bên trên để thêm.
+          <p className="text-center text-xs text-slate-400 py-8">
+            Danh mục đang trống. Thêm mã ở trên.
           </p>
         ) : (
           <DndContext
