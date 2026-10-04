@@ -466,15 +466,21 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       <div className="relative p-2.5 bg-white dark:bg-[#171718] border-t border-slate-200 dark:border-zinc-800">
         <form onSubmit={onFormSubmit} className="w-full">
           <BorderGlow
-            borderRadius={16}
-            glowColor="155 80 50"
-            colors={['#10b981', '#06b6d4', '#3b82f6']}
+            edgeSensitivity={30}
+            glowColor="40 80 80"
+            backgroundColor="#120F17"
+            borderRadius={28}
+            glowRadius={40}
+            glowIntensity={1.0}
+            coneSpread={25}
+            animated={false}
+            colors={['#c084fc', '#f472b6', '#38bdf8']}
             className="w-full"
           >
             <div
               aria-label="Khung nhập câu hỏi AI"
               className={cn(
-                "relative flex w-full cursor-text items-center rounded-2xl text-left transition-all duration-200",
+                "relative flex w-full cursor-text items-center rounded-[28px] text-left transition-all duration-200",
                 "bg-transparent border-none outline-none",
                 isDraggingOver &&
                   "bg-emerald-100 dark:bg-emerald-950",
@@ -482,7 +488,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
               onClick={handleContainerClick}
             >
               {isDraggingOver && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500 dark:bg-emerald-950 border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
+                <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[28px] bg-emerald-500 dark:bg-emerald-950 border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
                   <span>Thả mã hoặc module Danh mục để phân tích xu hướng</span>
                 </div>
               )}
@@ -506,11 +512,11 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   }}
                   rows={1}
                   placeholder="Hỏi AI về cổ phiếu hoặc thị trường"
-                  className="w-full resize-none border-none bg-transparent pl-3.5 pr-[72px] py-2 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
+                  className="w-full resize-none border-none bg-transparent pl-4 pr-[76px] py-2.5 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
                 />
               </div>
 
-              <div className="absolute right-1.5 bottom-1 flex items-center gap-1.5">
+              <div className="absolute right-2 bottom-1.5 flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={handleClearHistory}
