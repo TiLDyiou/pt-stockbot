@@ -3,7 +3,7 @@ import { getLanguageModel, getMaxOutputTokens } from "@/lib/ai/provider";
 import { sanitizeMessages } from "@/lib/ai/sanitize";
 import { stockTools } from "@/lib/ai/tools";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const SYSTEM_PROMPT = `Bạn là trợ lý ảo phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) khách quan, trung thực.
 
