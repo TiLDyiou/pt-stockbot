@@ -1146,7 +1146,7 @@ export default function StockChartClient({
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-purple-500/15 dark:bg-purple-950/50 backdrop-blur-xs border-2 border-dashed border-purple-500 rounded-lg pointer-events-none animate-in fade-in">
             <div className="px-4 py-2 rounded-xl bg-slate-900/90 text-white font-mono text-xs font-semibold shadow-lg border border-purple-400 flex items-center gap-2">
               <GitCompareArrowsIcon size={16} className="text-purple-400" />
-              <span>🎯 Thả mã vào đây để so sánh trên biểu đồ</span>
+              <span>Thả mã vào đây để so sánh trên biểu đồ</span>
             </div>
           </div>
         )}
