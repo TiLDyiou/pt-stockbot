@@ -92,16 +92,28 @@ function SortableItem({
         >
           <GripVerticalIcon size={14} animateOnHover />
         </button>
-        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-zinc-200 shrink-0">
-          {symbol.slice(0, 3)}
-        </div>
-        <div className="text-left font-mono">
-          <span className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors block text-xs tracking-wider">
-            {symbol}
-          </span>
-          <span className="text-[10px] text-slate-400 dark:text-zinc-500">
-            HOSE
-          </span>
+        <div
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData("application/x-stock-ticker", symbol);
+            e.dataTransfer.setData("text/plain", symbol);
+            e.dataTransfer.effectAllowed = "copy";
+          }}
+          className="flex items-center gap-2.5 cursor-grab active:cursor-grabbing"
+          title={`Kéo mã ${symbol} vào biểu đồ hoặc khung chat`}
+        >
+          <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-zinc-200 shrink-0">
+            {symbol.slice(0, 3)}
+          </div>
+          <div className="text-left font-mono">
+            <span className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors block text-xs tracking-wider">
+              {symbol}
+            </span>
+            <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+              HOSE
+            </span>
+          </div>
         </div>
       </div>
 
@@ -271,7 +283,17 @@ export function WatchlistWidget({
     <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] overflow-hidden">
       {/* Card Header */}
       <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-slate-100 dark:border-zinc-800/60">
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData("application/x-dashboard-module", "watchlist");
+            e.dataTransfer.setData("application/x-module-watchlist", "watchlist");
+            e.dataTransfer.effectAllowed = "copyMove";
+          }}
+          className="flex items-center gap-2.5 shrink-0 cursor-grab active:cursor-grabbing"
+          title="Kéo toàn bộ module Danh mục vào khung Chat để phân tích (hoặc hoán đổi vị trí)"
+        >
           {dragHandle}
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <BookmarkIcon

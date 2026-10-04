@@ -23,6 +23,7 @@ export function IndexImpactChart({
 
   const handleDragStart = (e: React.DragEvent, symbol: string) => {
     e.dataTransfer.setData("text/plain", symbol);
+    e.dataTransfer.setData("application/x-stock-ticker", symbol);
     e.dataTransfer.effectAllowed = "copy";
   };
 

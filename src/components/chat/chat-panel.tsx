@@ -78,15 +78,40 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
 
-  const isStockTickerDrag = (e: React.DragEvent) => {
+  // Automatically adjust textarea height whenever input changes
+  useEffect(() => {
+    adjustHeight();
+  }, [input, adjustHeight]);
+
+  const isDroppableToChat = (e: React.DragEvent) => {
+    // Exclude OS files
+    if (e.dataTransfer.types.includes("Files")) {
+      return false;
+    }
+    // Strictly forbid chart and overview modules
+    if (
+      e.dataTransfer.types.includes("application/x-module-chart") ||
+      e.dataTransfer.types.includes("application/x-module-overview")
+    ) {
+      return false;
+    }
+    // Allow Watchlist module
+    if (e.dataTransfer.types.includes("application/x-module-watchlist")) {
+      return true;
+    }
+    // Any other generic dashboard module (if not watchlist) is forbidden
     if (e.dataTransfer.types.includes("application/x-dashboard-module")) {
       return false;
     }
-    return e.dataTransfer.types.includes("application/x-stock-ticker");
+    // Stock ticker (via custom MIME or text/plain)
+    return (
+      e.dataTransfer.types.includes("application/x-stock-ticker") ||
+      e.dataTransfer.types.includes("text/plain")
+    );
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
-    if (!isStockTickerDrag(e)) return;
+    if (!isDroppableToChat(e)) return;
     e.preventDefault();
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) {
@@ -95,13 +120,12 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    if (!isStockTickerDrag(e)) return;
+    if (!isDroppableToChat(e)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes("application/x-dashboard-module")) return;
     e.preventDefault();
     dragCounterRef.current -= 1;
     if (dragCounterRef.current <= 0) {
@@ -115,30 +139,115 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     dragCounterRef.current = 0;
     setIsDraggingOver(false);
 
-    if (e.dataTransfer.types.includes("application/x-dashboard-module")) {
+    // 1. Check for module drops
+    const moduleType =
+      e.dataTransfer.getData("application/x-dashboard-module") ||
+      e.dataTransfer.getData("application/x-module-watchlist") ||
+      e.dataTransfer.getData("application/x-module-chart") ||
+      e.dataTransfer.getData("application/x-module-overview");
+
+    if (moduleType) {
+      // Strictly ignore and reject chart and overview modules
+      if (moduleType !== "watchlist") {
+        return;
+      }
+
+      // ONLY Watchlist module is permitted
+      const currentWatchlist = loadWatchlist();
+      const tickers =
+        currentWatchlist && currentWatchlist.length > 0
+          ? currentWatchlist
+          : watchlist;
+
+      if (!tickers || tickers.length === 0) {
+        return;
+      }
+
+      const watchlistText = tickers.join("\n");
+      setInput((prev) => {
+        const trimmed = prev.trim();
+        if (!trimmed) {
+          return watchlistText;
+        }
+        return `${prev.trimEnd()}\n${watchlistText}`;
+      });
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const len = textareaRef.current.value.length;
+          textareaRef.current.selectionStart = len;
+          textareaRef.current.selectionEnd = len;
+          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+        }
+        adjustHeight();
+      }, 50);
       return;
     }
 
-    const raw = e.dataTransfer.getData("application/x-stock-ticker");
+    // 2. Check for stock ticker drops
+    const raw =
+      e.dataTransfer.getData("application/x-stock-ticker") ||
+      e.dataTransfer.getData("text/plain");
     if (!raw) return;
 
     const lower = raw.trim().toLowerCase();
-    if (["chart", "watchlist", "overview", "quick_quote"].includes(lower)) {
+    // If the dropped text is "chart" or "overview", reject immediately
+    if (["chart", "overview", "quick_quote"].includes(lower)) {
       return;
     }
 
+    // If the dropped text is "watchlist" (from plain text drop of the module)
+    if (lower === "watchlist") {
+      const currentWatchlist = loadWatchlist();
+      const tickers =
+        currentWatchlist && currentWatchlist.length > 0
+          ? currentWatchlist
+          : watchlist;
+
+      if (tickers && tickers.length > 0) {
+        const watchlistText = tickers.join("\n");
+        setInput((prev) => {
+          const trimmed = prev.trim();
+          if (!trimmed) return watchlistText;
+          return `${prev.trimEnd()}\n${watchlistText}`;
+        });
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const len = textareaRef.current.value.length;
+            textareaRef.current.selectionStart = len;
+            textareaRef.current.selectionEnd = len;
+            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+          }
+          adjustHeight();
+        }, 50);
+      }
+      return;
+    }
+
+    // 3. Normal stock ticker
     const ticker = raw
       .trim()
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "");
+
     if (ticker.length >= 2 && ticker.length <= 10) {
-      const promptText = `Phân tích chi tiết mã cổ phiếu ${ticker}`;
-      setInput(promptText);
+      setInput((prev) => {
+        const trimmed = prev.trim();
+        if (!trimmed) {
+          return ticker;
+        }
+        return `${prev.trimEnd()}\n${ticker}`;
+      });
+
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
-          textareaRef.current.selectionStart = promptText.length;
-          textareaRef.current.selectionEnd = promptText.length;
+          const len = textareaRef.current.value.length;
+          textareaRef.current.selectionStart = len;
+          textareaRef.current.selectionEnd = len;
+          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
         }
         adjustHeight();
       }, 50);
@@ -351,7 +460,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
           >
             {isDraggingOver && (
               <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-950/90 backdrop-blur-xs border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
-                <span>Thả mã vào đây để tạo prompt phân tích</span>
+                <span>Thả mã hoặc module Danh mục vào đây (tự động xuống dòng)</span>
               </div>
             )}
             <div className="w-full max-h-[180px] overflow-y-auto">
@@ -362,6 +471,8 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   handleInputChange(e);
                   adjustHeight();
                 }}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 onKeyDown={(e) => {

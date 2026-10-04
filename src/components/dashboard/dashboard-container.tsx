@@ -243,7 +243,8 @@ export function DashboardContainer({
       onDragStart={(e) => {
         e.stopPropagation();
         e.dataTransfer.setData("application/x-dashboard-module", id);
-        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData(`application/x-module-${id}`, id);
+        e.dataTransfer.effectAllowed = id === "watchlist" ? "copyMove" : "move";
         setDraggedModule(id);
       }}
       onDragEnd={() => {
@@ -251,7 +252,11 @@ export function DashboardContainer({
         setDragOverModule(null);
       }}
       className="p-1 rounded-md text-slate-400 dark:text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-zinc-800 cursor-grab active:cursor-grabbing transition-colors shrink-0"
-      title={`Kéo thả để hoán đổi vị trí module ${MODULE_CONFIG[id].label}`}
+      title={
+        id === "watchlist"
+          ? "Kéo thả để hoán đổi vị trí, hoặc kéo vào khung Chat để phân tích toàn bộ danh mục"
+          : `Kéo thả để hoán đổi vị trí module ${MODULE_CONFIG[id].label}`
+      }
     >
       <GripVerticalIcon size={14} animateOnHover />
     </div>
@@ -533,7 +538,8 @@ export function DashboardContainer({
                   onDragStart={(e) => {
                     e.stopPropagation();
                     e.dataTransfer.setData("application/x-dashboard-module", modId);
-                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData(`application/x-module-${modId}`, modId);
+                    e.dataTransfer.effectAllowed = modId === "watchlist" ? "copyMove" : "move";
                     setDraggedModule(modId);
                   }}
                   onDragEnd={() => {
