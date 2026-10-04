@@ -1,10 +1,21 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { Message } from "ai";
 import { ChatMessageItem } from "./chat-message-item";
 import { loadWatchlist, STORAGE_KEYS } from "@/lib/storage/layout-storage";
+import {
+  DeleteIcon,
+  BotMessageSquareIcon,
+  ArrowRightIcon,
+  SendIcon,
+  BanIcon,
+  BotIcon,
+} from "lucide-animated";
+import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
+import { cn } from "@/lib/utils/cn";
+import ThoughtLine from "./thought-line";
 
 interface ChatPanelProps {
   onOpenChart?: (ticker: string) => void;
@@ -22,13 +33,32 @@ interface PersistedHistory {
 }
 
 export function ChatPanel({ onOpenChart }: ChatPanelProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [isClientReady, setIsClientReady] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isAtBottomRef.current = distanceToBottom <= 100;
+  }, []);
+
+  const scrollToBottom = useCallback((smooth = false) => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    if (smooth) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, []);
 
   const {
     messages,
     input,
+    setInput,
     handleInputChange,
     handleSubmit,
     isLoading,
@@ -39,6 +69,76 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     api: "/api/chat",
     maxSteps: 5,
   });
+
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
+    minHeight: 36,
+    maxHeight: 180,
+  });
+  const [isFocused, setIsFocused] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDraggingOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDraggingOver(false);
+
+    const raw =
+      e.dataTransfer.getData("application/x-stock-ticker") ||
+      e.dataTransfer.getData("text/plain");
+
+    if (!raw) return;
+    const ticker = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (ticker.length >= 2 && ticker.length <= 10) {
+      const promptText = `Phân tích chi tiết mã cổ phiếu ${ticker}`;
+      setInput(promptText);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.selectionStart = promptText.length;
+          textareaRef.current.selectionEnd = promptText.length;
+        }
+        adjustHeight();
+      }, 50);
+    }
+  };
+
+  const handleContainerClick = () => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const onFormSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    isAtBottomRef.current = true;
+    handleSubmit(e);
+    adjustHeight(true);
+    requestAnimationFrame(() => scrollToBottom(false));
+  };
 
   useEffect(() => {
     try {
@@ -72,12 +172,26 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     }
   }, [messages, isClientReady]);
 
+  // Auto-scroll instantly during streaming to eliminate jitter and up-down oscillation
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (isAtBottomRef.current) {
+      scrollToBottom(false);
+    }
+  }, [messages, isLoading, scrollToBottom]);
+
+  // Initial load auto-scroll
+  useEffect(() => {
+    if (isClientReady) {
+      scrollToBottom(false);
+    }
+  }, [isClientReady, scrollToBottom]);
 
   const handleClearHistory = () => {
-    if (confirm("Xóa toàn bộ lịch sử trò chuyện?")) {
+    if (messages.length === 0) return;
+    const confirmed = window.confirm(
+      "CẢNH BÁO: Toàn bộ lịch sử trò chuyện và phân tích sẽ bị xóa vĩnh viễn.\n\nBạn có chắc chắn muốn xóa không?"
+    );
+    if (confirmed) {
       setMessages([]);
       try {
         localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
@@ -87,139 +201,186 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     }
   };
 
-  const handleCompareWatchlist = () => {
-    if (watchlist.length < 2) {
-      alert("Watchlist cần ít nhất 2 mã để so sánh.");
-      return;
-    }
-    const tickersToCompare = watchlist.slice(0, 5);
-    append({
-      role: "user",
-      content: `So sánh các mã cổ phiếu: ${tickersToCompare.join(", ")}`,
-    });
-  };
-
   const handlePromptClick = (promptText: string) => {
+    isAtBottomRef.current = true;
     append({
       role: "user",
       content: promptText,
     });
+    requestAnimationFrame(() => scrollToBottom(false));
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-terminal-panel border-r border-slate-200 dark:border-terminal-border select-none">
-      {/* Header (38px) */}
-      <div className="h-[38px] px-3 border-b border-slate-200 dark:border-terminal-border flex items-center justify-between shrink-0 bg-slate-50 dark:bg-terminal-header">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <h2 className="font-semibold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
-            Trợ lý AI Phân tích
-          </h2>
-        </div>
-
-        <button
-          onClick={handleClearHistory}
-          disabled={messages.length === 0}
-          className="text-xs text-slate-400 hover:text-rose-500 transition-colors disabled:opacity-30"
-          title="Xóa lịch sử trò chuyện"
-        >
-          Xóa lịch sử
-        </button>
-      </div>
-
+    <div
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={cn(
+        "relative flex flex-col h-full bg-slate-50/50 dark:bg-[#0c0c0e] border-r border-slate-200/80 dark:border-zinc-800/80 select-none transition-colors",
+        isDraggingOver && "ring-2 ring-inset ring-emerald-500/60 bg-emerald-50/5 dark:bg-emerald-950/10"
+      )}
+    >
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 select-text">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-3 select-text"
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg mb-2 border border-emerald-200 dark:border-emerald-800">
-              💬
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 border border-emerald-500/20">
+              <BotMessageSquareIcon size={24} className="text-emerald-500" animateOnHover />
             </div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
               Phân tích Chứng khoán Thông minh
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-4 leading-relaxed">
-              Trợ lý tự động gọi tools lấy giá, lịch sử, RSI, MACD, báo cáo tài chính và tổng quan thị trường.
+            <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xs mb-5 leading-relaxed">
+              Trợ lý tự động gọi tools lấy giá, lịch sử nến, RSI, MACD, báo cáo tài chính và bối cảnh thị trường.
             </p>
 
-            <div className="flex flex-col gap-1.5 w-full max-w-xs">
+            <div className="flex flex-col gap-2 w-full max-w-xs">
               {SUGGESTED_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => handlePromptClick(prompt)}
-                  className="px-3 py-2 rounded bg-slate-50 dark:bg-terminal-subtle hover:bg-slate-100 dark:hover:bg-terminal-hover border border-slate-200 dark:border-terminal-border text-xs text-left text-slate-700 dark:text-slate-300 transition-colors"
+                  className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#171718] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800/80 text-xs text-left text-slate-800 dark:text-zinc-200 transition-all shadow-xs hover:border-slate-300 dark:hover:border-zinc-700"
                 >
-                  {prompt} →
+                  <span className="font-medium">{prompt}</span>
+                  <ArrowRightIcon size={14} className="float-right text-emerald-500 mt-0.5" animateOnHover />
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          messages.map((m) => (
-            <ChatMessageItem
-              key={m.id}
-              message={m}
-              watchlistTickers={watchlist}
-              onOpenChart={onOpenChart}
-            />
-          ))
+          <>
+            {messages.map((m, index) => (
+              <ChatMessageItem
+                key={m.id}
+                message={m}
+                watchlistTickers={watchlist}
+                onOpenChart={onOpenChart}
+                isStreaming={isLoading && index === messages.length - 1}
+              />
+            ))}
+            {isLoading && messages[messages.length - 1]?.role === "user" && (
+              <div className="flex flex-col mb-3.5 items-start">
+                <div className="flex items-center mb-1.5 px-0.5 justify-start">
+                  <span
+                    className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)]"
+                    title="PhuocThinh AI"
+                  >
+                    <BotIcon size={12} animateOnHover />
+                  </span>
+                </div>
+                <div className="w-full max-w-[92%] md:max-w-[88%] mb-2 px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-zinc-900/90 border border-emerald-500/30 dark:border-emerald-500/30 shadow-xs">
+                  <ThoughtLine
+                    working={true}
+                    steps={["Đang phân tích câu hỏi…", "Đang truy vấn dữ liệu nguồn…", "Đang soạn thảo câu trả lời…"]}
+                    label="Đang suy nghĩ…"
+                    doneLabel="Đã suy nghĩ trong"
+                    glyph="sparkle"
+                    fontSize={12}
+                    breathPeriod={1.6}
+                    breathDepth={0.45}
+                    settleDuration={350}
+                    settleBlur={2}
+                    collapsible
+                    showTimer
+                    className="text-slate-600 dark:text-zinc-300 w-full"
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Watchlist Quick Queries Bar */}
-      <div className="px-3 py-1.5 bg-slate-50 dark:bg-terminal-header border-t border-slate-200 dark:border-terminal-border">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs no-scrollbar">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0">
-            Hỏi nhanh:
-          </span>
-          {watchlist.slice(0, 8).map((ticker) => (
-            <button
-              key={ticker}
-              onClick={() => handlePromptClick(`Phân tích ${ticker}`)}
-              className="px-2 py-0.5 rounded bg-white dark:bg-terminal-subtle hover:bg-slate-100 dark:hover:bg-terminal-hover border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-mono text-xs font-semibold shrink-0 transition-colors"
-            >
-              {ticker}
-            </button>
-          ))}
-          {watchlist.length >= 2 && (
-            <button
-              onClick={handleCompareWatchlist}
-              className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 text-xs shrink-0 font-medium transition-colors"
-            >
-              So sánh watchlist
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Input Area (KokonutUI AI Input Search inspired) */}
+      <div className="relative p-2.5 bg-white dark:bg-[#171718] border-t border-slate-200/80 dark:border-zinc-800/80">
+        <form onSubmit={onFormSubmit} className="w-full">
+          <div
+            aria-label="Khung nhập câu hỏi AI"
+            className={cn(
+              "relative flex w-full cursor-text items-center rounded-2xl text-left transition-all duration-200",
+              "bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/90 dark:border-zinc-800/90",
+              "ring-1 ring-black/5 dark:ring-white/5",
+              isFocused && "ring-2 ring-emerald-500/30 border-emerald-500/50 dark:border-emerald-500/50 shadow-xs",
+              isDraggingOver && "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-md"
+            )}
+            onClick={handleContainerClick}
+          >
+            {isDraggingOver && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-950/90 backdrop-blur-xs border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
+                <span>🎯 Thả mã vào đây để tạo prompt phân tích</span>
+              </div>
+            )}
+            <div className="w-full max-h-[180px] overflow-y-auto">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  adjustHeight();
+                }}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input.trim() && !isLoading) {
+                      onFormSubmit();
+                    }
+                  }
+                }}
+                rows={1}
+                className="w-full resize-none border-none bg-transparent pl-3.5 pr-[72px] py-2 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
+              />
+            </div>
 
-      {/* Input Area */}
-      <div className="p-3 bg-white dark:bg-terminal-panel border-t border-slate-200 dark:border-terminal-border">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Hỏi về mã chứng khoán (VD: Phân tích FPT, SSI...)"
-            className="flex-1 px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-terminal-subtle border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white"
-          />
+            <div className="absolute right-1.5 bottom-1 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                disabled={messages.length === 0 || isLoading}
+                className={cn(
+                  "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
+                  messages.length > 0 && !isLoading
+                    ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 cursor-pointer shadow-xs active:scale-95"
+                    : "opacity-25 cursor-not-allowed bg-rose-500/5 text-rose-400/60 border border-transparent"
+                )}
+                title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
+              >
+                <DeleteIcon size={13} animateOnHover />
+              </button>
 
-          {isLoading ? (
-            <button
-              type="button"
-              onClick={stop}
-              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs rounded transition-colors"
-            >
-              Dừng
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-medium text-xs rounded transition-colors"
-            >
-              Gửi
-            </button>
-          )}
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={stop}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 text-xs font-semibold transition-colors cursor-pointer"
+                  title="Dừng tạo phản hồi"
+                >
+                  <BanIcon size={12} animateOnHover />
+                  <span>Dừng</span>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className={cn(
+                    "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
+                    input.trim()
+                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer active:scale-95"
+                      : "bg-slate-200/60 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
+                  )}
+                  title="Gửi câu hỏi"
+                >
+                  <SendIcon size={13} animateOnHover />
+                </button>
+              )}
+            </div>
+          </div>
         </form>
       </div>
     </div>

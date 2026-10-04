@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "PhuocThinh Stockbot - Workspace Phân tích Cổ phiếu Việt Nam",
   description:
     "Workspace tương tác và trợ lý AI phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) với TradingView Lightweight Charts và drag-and-drop dashboard.",
+  icons: {
+    icon: "/candlestick.svg",
+  },
 };
 
 export default function RootLayout({

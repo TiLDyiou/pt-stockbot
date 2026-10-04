@@ -21,9 +21,18 @@ import { CSS } from "@dnd-kit/utilities";
 import { loadWatchlist, saveWatchlist } from "@/lib/storage/layout-storage";
 import { SparklineSvg } from "./sparkline-svg";
 import { formatPrice, formatPercent } from "@/lib/utils/format";
+import {
+  GripVerticalIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+  XIcon,
+  BookmarkIcon,
+  PlusIcon,
+} from "lucide-animated";
 
 interface WatchlistWidgetProps {
   onSelectSymbol?: (symbol: string) => void;
+  onCloseModule?: () => void;
 }
 
 interface TickerQuote {
@@ -54,58 +63,71 @@ function SortableItem({
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const isUp = (quote?.changePct || 0) >= 0;
+  const change = quote?.changePct || 0;
+  const isPositive = change > 0;
+  const isNegative = change < 0;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between px-2.5 py-2 rounded bg-slate-50 dark:bg-terminal-subtle/50 hover:bg-slate-100 dark:hover:bg-terminal-hover border border-slate-200/60 dark:border-terminal-border/80 transition-colors text-xs"
+      className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/40 border-b border-slate-100 dark:border-zinc-800/50 transition-colors text-xs cursor-pointer group last:border-b-0"
+      onClick={() => onSelect(symbol)}
     >
-      {/* Drag handle & Symbol */}
-      <div className="flex items-center gap-2">
+      {/* Drag handle & Symbol Monogram */}
+      <div className="flex items-center gap-2.5 min-w-[120px]">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-0.5"
-          title="Kéo thả sắp xếp"
+          onClick={(e) => e.stopPropagation()}
+          className="cursor-grab active:cursor-grabbing text-slate-300 dark:text-zinc-600 hover:text-slate-600 dark:hover:text-zinc-300 p-0.5 transition-colors"
+          title="Kéo thả sắp xếp thứ tự"
         >
-          ⋮⋮
+          <GripVerticalIcon size={14} animateOnHover />
         </button>
-        <button
-          onClick={() => onSelect(symbol)}
-          className="font-bold text-slate-900 dark:text-white hover:text-emerald-500 font-mono text-xs tracking-wider"
-        >
-          {symbol}
-        </button>
+        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/60 flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-zinc-200 shrink-0">
+          {symbol.slice(0, 3)}
+        </div>
+        <div className="text-left font-mono">
+          <span className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors block text-xs tracking-wider">
+            {symbol}
+          </span>
+          <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+            HOSE
+          </span>
+        </div>
       </div>
 
-      {/* Sparkline */}
-      <div
-        className="hidden sm:block cursor-pointer"
-        onClick={() => onSelect(symbol)}
-        title="Xem biểu đồ chi tiết"
-      >
-        <SparklineSvg data={sparkline || []} width={70} height={18} />
+      {/* Sparkline (30 days) */}
+      <div className="hidden sm:flex items-center justify-center px-2" title="Xu hướng giá 30 phiên gần nhất">
+        <SparklineSvg data={sparkline || []} width={85} height={22} />
       </div>
 
-      {/* Price & Change */}
+      {/* Price, Change Pill, & Remove Action */}
       <div className="flex items-center gap-3">
         {quote ? (
-          <div className="text-right font-mono">
-            <div className="font-semibold text-slate-900 dark:text-white">
+          <div className="flex items-center gap-2 sm:gap-3 text-right font-mono">
+            <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm min-w-[65px]">
               {formatPrice(quote.price)}
-            </div>
-            <div
-              className={`text-[11px] font-medium ${
-                isUp ? "text-emerald-500" : "text-rose-500"
+            </span>
+            <span
+              className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold min-w-[65px] justify-center ${
+                isPositive
+                  ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
+                  : isNegative
+                  ? "bg-rose-500/10 text-rose-500 dark:text-rose-400"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
               }`}
             >
-              {formatPercent(quote.changePct)}
-            </div>
+              {isPositive && <TrendingUpIcon size={11} animateOnHover />}
+              {isNegative && <TrendingDownIcon size={11} animateOnHover />}
+              <span>{formatPercent(quote.changePct)}</span>
+            </span>
           </div>
         ) : (
-          <div className="text-slate-400 text-[10px] font-mono animate-pulse">...</div>
+          <div className="text-slate-400 text-[11px] font-mono animate-pulse min-w-[130px] text-right">
+            Đang tải giá...
+          </div>
         )}
 
         <button
@@ -113,17 +135,17 @@ function SortableItem({
             e.stopPropagation();
             onRemove(symbol);
           }}
-          className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 text-xs transition-colors"
+          className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 dark:text-zinc-600 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100"
           title="Xóa khỏi watchlist"
         >
-          ✕
+          <XIcon size={12} animateOnHover />
         </button>
       </div>
     </div>
   );
 }
 
-export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
+export function WatchlistWidget({ onSelectSymbol, onCloseModule }: WatchlistWidgetProps) {
   const [tickers, setTickers] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Record<string, TickerQuote>>({});
   const [sparklines, setSparklines] = useState<Record<string, { date: string; close: number }[]>>({});
@@ -219,48 +241,78 @@ export function WatchlistWidget({ onSelectSymbol }: WatchlistWidgetProps) {
 
   if (!isMounted) {
     return (
-      <div className="p-4 text-center text-xs text-slate-400 font-mono">
+      <div className="p-6 text-center text-xs text-slate-400 font-mono">
         Đang tải danh mục theo dõi...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full select-none text-xs">
-      {/* Header & Add form */}
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-terminal-border">
-        <div className="flex items-center gap-1.5">
-          <span className="font-semibold text-xs tracking-wider uppercase text-slate-500">
-            Theo dõi
-          </span>
-          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-terminal-subtle text-slate-400">
-            {tickers.length}/20
-          </span>
+    <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] overflow-hidden">
+      {/* Card Header */}
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-slate-100 dark:border-zinc-800/60">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+            <BookmarkIcon size={16} className="text-emerald-500" animateOnHover />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
+              Danh mục theo dõi
+            </h3>
+            <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-mono">
+              {tickers.length}/20 mã cổ phiếu
+            </span>
+          </div>
         </div>
 
-        <form onSubmit={handleAddTicker} className="flex items-center gap-1">
-          <input
-            type="text"
-            placeholder="Mã (VD: SSI)"
-            value={newTicker}
-            onChange={(e) => setNewTicker(e.target.value)}
-            className="px-2 py-0.5 text-xs uppercase bg-slate-50 dark:bg-terminal-subtle border border-slate-200 dark:border-slate-700 rounded w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
-          />
-          <button
-            type="submit"
-            disabled={!newTicker.trim()}
-            className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs disabled:opacity-40 transition-colors"
-          >
-            +
-          </button>
-        </form>
+        {/* Right Actions: Quick Add Form & Close Button */}
+        <div className="flex items-center gap-2 ml-auto">
+          <form onSubmit={handleAddTicker} className="flex items-center gap-1.5">
+            <input
+              type="text"
+              placeholder="+ Thêm mã (VD: SSI)"
+              value={newTicker}
+              onChange={(e) => setNewTicker(e.target.value)}
+              className="px-3 py-1.5 text-xs uppercase bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-lg w-28 sm:w-32 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono text-slate-900 dark:text-white"
+            />
+            <button
+              type="submit"
+              disabled={!newTicker.trim()}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs disabled:opacity-40 transition-colors shadow-xs cursor-pointer shrink-0"
+            >
+              <PlusIcon size={12} animateOnHover />
+              <span>Thêm</span>
+            </button>
+          </form>
+
+          {onCloseModule && (
+            <button
+              type="button"
+              onClick={onCloseModule}
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800/80 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700/80 transition-colors cursor-pointer shrink-0"
+              title="Đóng module Danh mục theo dõi"
+            >
+              <XIcon size={14} animateOnHover />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table Column Labels */}
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-50/60 dark:bg-zinc-900/40 border-b border-slate-100 dark:border-zinc-800/40 text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0">
+        <span className="min-w-[120px]">Mã cổ phiếu</span>
+        <span className="hidden sm:inline">Xu hướng 30N</span>
+        <div className="flex items-center gap-3">
+          <span>Giá & Biến động</span>
+          <span className="w-6" />
+        </div>
       </div>
 
       {/* Tickers list */}
-      <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 max-h-[340px]">
+      <div className="divide-y divide-slate-100 dark:divide-zinc-800/40 flex-1 min-h-0 overflow-y-auto">
         {tickers.length === 0 ? (
-          <p className="text-center text-xs text-slate-400 py-6">
-            Danh mục đang trống. Thêm mã vào ô trên.
+          <p className="text-center text-xs text-slate-400 py-8">
+            Danh mục theo dõi đang trống. Thêm mã vào ô trên.
           </p>
         ) : (
           <DndContext

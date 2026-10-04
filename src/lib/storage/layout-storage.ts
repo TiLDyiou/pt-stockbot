@@ -1,5 +1,6 @@
 export const STORAGE_KEYS = {
   LAYOUT: "stockbot:v2:layout",
+  MODULES: "stockbot:v2:modules",
   WATCHLIST: "stockbot:v1:watchlist",
   DISCLAIMER: "stockbot:v1:disclaimer",
   CHAT_HISTORY: "stockbot:v1:chat_history",
@@ -169,6 +170,51 @@ export function saveDisclaimerAccepted(
 
   try {
     store.setItem(STORAGE_KEYS.DISCLAIMER, accepted ? "true" : "false");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export interface ModuleVisibility {
+  chart: boolean;
+  watchlist: boolean;
+  overview: boolean;
+}
+
+export const DEFAULT_MODULE_VISIBILITY: ModuleVisibility = {
+  chart: true,
+  watchlist: true,
+  overview: true,
+};
+
+export function loadModuleVisibility(customStorage?: Storage | null): ModuleVisibility {
+  const store = getSafeStorage(customStorage);
+  if (!store) return DEFAULT_MODULE_VISIBILITY;
+
+  try {
+    const raw = store.getItem(STORAGE_KEYS.MODULES);
+    if (!raw) return DEFAULT_MODULE_VISIBILITY;
+    const parsed = JSON.parse(raw);
+    return {
+      chart: typeof parsed.chart === "boolean" ? parsed.chart : true,
+      watchlist: typeof parsed.watchlist === "boolean" ? parsed.watchlist : true,
+      overview: typeof parsed.overview === "boolean" ? parsed.overview : true,
+    };
+  } catch {
+    return DEFAULT_MODULE_VISIBILITY;
+  }
+}
+
+export function saveModuleVisibility(
+  vis: ModuleVisibility,
+  customStorage?: Storage | null
+): boolean {
+  const store = getSafeStorage(customStorage);
+  if (!store) return false;
+
+  try {
+    store.setItem(STORAGE_KEYS.MODULES, JSON.stringify(vis));
     return true;
   } catch {
     return false;

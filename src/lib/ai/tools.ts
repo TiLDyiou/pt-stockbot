@@ -6,6 +6,7 @@ import {
   getHistory,
   getAiContext,
   getFundamentals,
+  getRatios,
   getMarketOverview,
   compareSymbolsList,
   getNews,
@@ -102,13 +103,28 @@ export const stockTools = {
 
   get_fundamentals: tool({
     description:
-      "Lấy thông tin cơ bản của công ty và tối đa 15 chỉ số tài chính (Doanh thu, LNST, ROE, ROA, biên lợi nhuận)",
+      "Lấy thông tin cơ bản của công ty, chỉ số định giá (P/E, P/B, P/S) và báo cáo tài chính (Doanh thu, LNST, ROE, ROA, biên lợi nhuận)",
     parameters: z.object({
       ticker: z.string().min(3).max(10),
       period: z.enum(["quarter", "year"]).default("quarter"),
     }),
     execute: async ({ ticker, period }) => {
       return safeExecute(() => getFundamentals(ticker, period));
+    },
+  }),
+
+  get_ratios: tool({
+    description:
+      "Lấy các chỉ số định giá tài chính cốt lõi gồm P/E, P/B, P/S, ROE, ROA và vốn hóa thị trường của một mã cổ phiếu",
+    parameters: z.object({
+      ticker: z
+        .string()
+        .min(3, "Mã cổ phiếu tối thiểu 3 ký tự")
+        .max(10, "Mã cổ phiếu tối đa 10 ký tự")
+        .regex(/^[A-Za-z0-9]+$/, "Mã cổ phiếu không chứa ký tự đặc biệt"),
+    }),
+    execute: async ({ ticker }) => {
+      return safeExecute(() => getRatios(ticker));
     },
   }),
 

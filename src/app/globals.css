@@ -53,3 +53,27 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+/* Ticker Marquee Scroller (NextAdmin style) */
+.scroller {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.scroller .scroller__inner {
+  flex-wrap: nowrap;
+  width: max-content;
+}
+
+.scroller:hover .scroller__inner {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroller .scroller__inner {
+    flex-wrap: wrap !important;
+    width: auto !important;
+    animation: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET as getCandlesHandler } from "../app/api/candles/route";
 import { GET as getSparklineHandler } from "../app/api/sparkline/route";
+import { GET as getRatiosHandler } from "../app/api/ratios/route";
 import * as vnstockClient from "../lib/vnstock/client";
 import { NextRequest } from "next/server";
 
@@ -62,6 +63,41 @@ describe("API Edge / Boundary Tests", () => {
       expect(data.sparklines.VCB).toHaveLength(2);
       expect(data.sparklines.BROKEN).toEqual([]);
       expect(data.errors.BROKEN).toContain("Lỗi tải mã BROKEN");
+    });
+  });
+
+  describe("/api/ratios", () => {
+    it("returns 400 for invalid symbol", async () => {
+      const req = new NextRequest("http://localhost:3000/api/ratios?symbol=@INVALID!");
+      const res = await getRatiosHandler(req);
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain("Mã cổ phiếu không hợp lệ");
+    });
+
+    it("returns valuation ratios for a valid symbol", async () => {
+      const mockRatios = {
+        symbol: "FPT",
+        pe: 11.66,
+        pb: 2.93,
+        ps: 1.84,
+        roe: 26.47,
+        roa: 12.78,
+        marketCap: 117104,
+        year: "2026",
+        quarter: 2,
+      };
+
+      vi.spyOn(vnstockClient, "getRatios").mockResolvedValue(mockRatios);
+
+      const req = new NextRequest("http://localhost:3000/api/ratios?symbol=FPT");
+      const res = await getRatiosHandler(req);
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.pe).toBe(11.66);
+      expect(data.pb).toBe(2.93);
+      expect(data.ps).toBe(1.84);
     });
   });
 });

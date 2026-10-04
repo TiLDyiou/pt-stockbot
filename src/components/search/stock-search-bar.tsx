@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { formatPrice, formatPercent } from "@/lib/utils/format";
+import {
+  SearchIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+  ArrowRightIcon,
+  SparklesIcon,
+} from "lucide-animated";
 
 interface SearchResultItem {
   symbol: string;
@@ -121,9 +128,11 @@ export function StockSearchBar({
     <div ref={containerRef} className="relative w-full max-w-md">
       {/* Search Input Box */}
       <div className="relative flex items-center">
-        <span className="absolute left-2.5 text-slate-400 text-xs pointer-events-none">
-          🔍
-        </span>
+        <SearchIcon
+          size={14}
+          className="absolute left-3 text-slate-400 dark:text-zinc-500 pointer-events-none"
+          animateOnHover
+        />
         <input
           ref={inputRef}
           type="text"
@@ -135,51 +144,52 @@ export function StockSearchBar({
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Tra mã hoặc giá (VD: VNINDEX, FPT, VCB, HPG)..."
-          className="w-full pl-7 pr-12 py-1 text-xs bg-slate-100 dark:bg-terminal-subtle border border-slate-200 dark:border-slate-700/80 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 font-sans transition-all"
+          className="w-full pl-8 pr-12 py-1.5 text-xs bg-slate-100 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 font-sans transition-all"
         />
-        <span className="absolute right-2 text-[10px] font-mono text-slate-400 border border-slate-300 dark:border-slate-700 px-1 rounded hidden sm:inline pointer-events-none">
+        <span className="absolute right-2.5 text-[10px] font-mono text-slate-400 dark:text-zinc-500 border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 rounded-md hidden sm:inline pointer-events-none">
           /
         </span>
       </div>
 
       {/* Dropdown Results */}
       {isOpen && (query.trim().length > 0 || results.length > 0) && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-terminal-panel border border-slate-200 dark:border-terminal-border rounded-md shadow-xl overflow-hidden z-50 animate-in fade-in duration-100">
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-[#171718] border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in duration-100">
           {isLoading && results.length === 0 ? (
-            <div className="p-3 text-center text-xs text-slate-400 font-mono animate-pulse">
+            <div className="p-4 text-center text-xs text-slate-400 dark:text-zinc-500 font-mono animate-pulse">
               Đang tra cứu giá...
             </div>
           ) : results.length === 0 ? (
-            <div className="p-3 text-center text-xs text-slate-400">
+            <div className="p-4 text-center text-xs text-slate-400 dark:text-zinc-500">
               Không tìm thấy kết quả nào cho &quot;{query}&quot;. Bấm Enter để mở biểu đồ trực tiếp mã này.
             </div>
           ) : (
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-terminal-border/60">
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/50">
               {results.map((item, idx) => {
                 const isSelected = idx === selectedIndex;
-                const isUp = (item.changePct || 0) >= 0;
+                const isPositive = (item.changePct || 0) > 0;
+                const isNegative = (item.changePct || 0) < 0;
 
                 return (
                   <div
                     key={item.symbol}
                     onClick={() => handleSelect(item.symbol)}
-                    className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
+                    className={`flex items-center justify-between p-3 cursor-pointer text-xs transition-colors ${
                       isSelected
-                        ? "bg-slate-100 dark:bg-terminal-hover"
-                        : "hover:bg-slate-50 dark:hover:bg-terminal-subtle"
+                        ? "bg-slate-100 dark:bg-zinc-800/60"
+                        : "hover:bg-slate-50 dark:hover:bg-zinc-800/30"
                     }`}
                   >
                     {/* Left: Symbol & Name */}
                     <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <span className="font-bold font-mono text-slate-900 dark:text-white text-xs tracking-wider">
                           {item.symbol}
                         </span>
-                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-100 dark:bg-terminal-subtle text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
                           {item.exchange}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                      <span className="text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-xs">
                         {item.name}
                       </span>
                     </div>
@@ -192,16 +202,23 @@ export function StockSearchBar({
                             {formatPrice(item.price)}
                           </div>
                           <div
-                            className={`text-[10px] font-semibold ${
-                              isUp ? "text-emerald-500" : "text-rose-500"
+                            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isPositive
+                                ? "bg-emerald-500/10 text-emerald-500"
+                                : isNegative
+                                ? "bg-rose-500/10 text-rose-500"
+                                : "bg-amber-500/10 text-amber-500"
                             }`}
                           >
-                            {formatPercent(item.changePct)}
+                            {isPositive && <TrendingUpIcon size={11} animateOnHover />}
+                            {isNegative && <TrendingDownIcon size={11} animateOnHover />}
+                            <span>{formatPercent(item.changePct)}</span>
                           </div>
                         </div>
                       ) : (
-                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                          Mở biểu đồ →
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
+                          <span>Mở biểu đồ</span>
+                          <ArrowRightIcon size={11} animateOnHover />
                         </span>
                       )}
 
@@ -213,10 +230,11 @@ export function StockSearchBar({
                             setIsOpen(false);
                             setQuery("");
                           }}
-                          className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 text-[10px] font-medium hover:bg-emerald-100"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium hover:bg-emerald-500/20 transition-colors"
                           title="Hỏi AI phân tích mã này"
                         >
-                          Phân tích AI
+                          <SparklesIcon size={11} animateOnHover />
+                          <span>Phân tích AI</span>
                         </button>
                       )}
                     </div>

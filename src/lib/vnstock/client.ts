@@ -8,6 +8,7 @@ import type {
   FundamentalsResult,
   CompareItem,
   NewsItem,
+  ValuationRatios,
 } from "./types";
 
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -111,35 +112,47 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
-      const { quickQuote, stock, market, recentHistory } = await import("vnstock-js");
+      const { stock, market, recentHistory, quickQuote } = await import("vnstock-js");
       const asOf = new Date().toISOString();
 
-      if (sym === "VNINDEX") {
-        try {
-          const ov = await withTimeout(market.overview(), getTimeoutMs(), "Tổng quan VNINDEX");
-          if (ov && ov.index && ov.index.close) {
-            const idx = ov.index;
-            const ref = idx.close - (idx.change || 0);
-            return {
-              symbol: "VNINDEX",
-              price: idx.close,
-              changePct: parseFloat((idx.changePercent || 0).toFixed(2)),
-              volume: idx.volume || 0,
-              ceiling: 0,
-              floor: 0,
-              reference: ref,
-              asOf,
-            };
+      const INDEX_MAP: Record<string, string> = {
+        VNINDEX: "VNINDEX",
+        VN30: "VN30",
+        HNX: "HNXIndex",
+        HNXINDEX: "HNXIndex",
+        UPCOM: "HNXUpcomIndex",
+      };
+
+      // 1. Handle Index symbols (VNINDEX, VN30, HNX, UPCOM)
+      if (sym in INDEX_MAP) {
+        if (sym === "VNINDEX") {
+          try {
+            const ov = await withTimeout(market.overview(), getTimeoutMs(), "Tổng quan VNINDEX");
+            if (ov && ov.index && ov.index.close) {
+              const idx = ov.index;
+              const ref = idx.close - (idx.change || 0);
+              return {
+                symbol: "VNINDEX",
+                price: idx.close,
+                changePct: parseFloat((idx.changePercent || 0).toFixed(2)),
+                volume: idx.volume || 0,
+                ceiling: 0,
+                floor: 0,
+                reference: ref,
+                asOf,
+              };
+            }
+          } catch {
+            // Fallback to recentHistory
           }
-        } catch {
-          // Fallback to recentHistory
         }
 
+        const indexSymbol = INDEX_MAP[sym];
         try {
           const hist = await withTimeout(
-            recentHistory("VNINDEX", 2),
+            recentHistory(indexSymbol, 2),
             getTimeoutMs(),
-            "Lịch sử VNINDEX"
+            `Lịch sử ${sym}`
           );
           if (hist && hist.length > 0) {
             const last = hist[hist.length - 1];
@@ -147,7 +160,7 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
             const change = last.close - prev;
             const changePct = prev > 0 ? (change / prev) * 100 : 0;
             return {
-              symbol: "VNINDEX",
+              symbol: sym,
               price: last.close,
               changePct: parseFloat(changePct.toFixed(2)),
               volume: last.volume || 0,
@@ -158,54 +171,84 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
             };
           }
         } catch {
-          // Continue
+          // Continue to fallback
         }
       }
 
+      // 2. Fetch stock data using priceBoard (contains price, referencePrice, ceilingPrice, floorPrice, volume)
       try {
-        const qq = await withTimeout(quickQuote(sym), getTimeoutMs(), `Lấy giá ${sym}`);
-        if (qq && qq.price) {
-          const ref = qq.price - (qq.change || 0);
-          const changePct = ref > 0 ? ((qq.change || 0) / ref) * 100 : 0;
+        const pb = await withTimeout(
+          stock.priceBoard({ ticker: sym }),
+          getTimeoutMs(),
+          `Bảng giá ${sym}`
+        );
+        const item = pb && pb[0];
+        if (item && item.price) {
+          const ref = item.referencePrice || item.price;
+          const change = item.price - ref;
+          const changePct = ref > 0 ? (change / ref) * 100 : 0;
+
           return {
             symbol: sym,
-            price: qq.price,
+            price: item.price,
             changePct: parseFloat(changePct.toFixed(2)),
-            volume: qq.volume || 0,
-            ceiling: 0,
-            floor: 0,
+            volume: item.totalVolume || item.matchVolume || 0,
+            ceiling: item.ceilingPrice || 0,
+            floor: item.floorPrice || 0,
             reference: ref,
             asOf,
           };
         }
       } catch {
-        // Fallback to priceBoard if quickQuote fails
+        // Fallback to recentHistory
       }
 
-      const pb = await withTimeout(
-        stock.priceBoard({ ticker: sym }),
-        getTimeoutMs(),
-        `Bảng giá ${sym}`
-      );
-      const item = pb && pb[0];
-      if (!item) {
-        throw new Error(`Không tìm thấy dữ liệu giá cho mã ${sym}`);
+      // 3. Fallback to recentHistory (2 sessions) to calculate precise daily change & % change
+      try {
+        const hist = await withTimeout(
+          recentHistory(sym, 2),
+          getTimeoutMs(),
+          `Lịch sử giá ${sym}`
+        );
+        if (hist && hist.length > 0) {
+          const last = hist[hist.length - 1];
+          const prev = hist.length > 1 ? hist[hist.length - 2].close : last.open;
+          const change = last.close - prev;
+          const changePct = prev > 0 ? (change / prev) * 100 : 0;
+          return {
+            symbol: sym,
+            price: last.close,
+            changePct: parseFloat(changePct.toFixed(2)),
+            volume: last.volume || 0,
+            ceiling: 0,
+            floor: 0,
+            reference: prev,
+            asOf,
+          };
+        }
+      } catch {
+        // Fallback to quickQuote
       }
 
-      const ref = item.referencePrice || item.price;
-      const change = item.price - ref;
-      const changePct = ref > 0 ? (change / ref) * 100 : 0;
+      // 4. Last-resort fallback to quickQuote
+      const qq = await withTimeout(quickQuote(sym), getTimeoutMs(), `Lấy giá ${sym}`);
+      if (qq && qq.price) {
+        const change = typeof qq.change === "number" ? qq.change : 0;
+        const ref = qq.price - change;
+        const changePct = ref > 0 ? (change / ref) * 100 : 0;
+        return {
+          symbol: sym,
+          price: qq.price,
+          changePct: parseFloat(changePct.toFixed(2)),
+          volume: qq.volume || 0,
+          ceiling: 0,
+          floor: 0,
+          reference: ref,
+          asOf,
+        };
+      }
 
-      return {
-        symbol: sym,
-        price: item.price,
-        changePct: parseFloat(changePct.toFixed(2)),
-        volume: item.totalVolume || item.matchVolume || 0,
-        ceiling: item.ceilingPrice || 0,
-        floor: item.floorPrice || 0,
-        reference: ref,
-        asOf,
-      };
+      throw new Error(`Không tìm thấy dữ liệu giá cho mã ${sym}`);
     },
     ttl
   ) as Promise<QuoteResult>;
@@ -351,6 +394,49 @@ export async function getAiContext(ticker: string, asOf?: string): Promise<any> 
 }
 
 /**
+ * Lấy các chỉ số định giá tài chính: P/E, P/B, P/S, ROE, ROA, vốn hóa
+ */
+export async function getRatios(ticker: string): Promise<ValuationRatios | null> {
+  const sym = ticker.trim().toUpperCase();
+  const cacheKey = `ratios:${sym}`;
+
+  return serverCache.getOrFetch(
+    cacheKey,
+    async () => {
+      const vnstock = (await import("vnstock-js")).default;
+      try {
+        const screening = vnstock.stock.screening as any;
+        const raw: any = await withTimeout(
+          screening.fetchRatios(sym),
+          getTimeoutMs(),
+          `Chỉ số định giá ${sym}`
+        );
+        if (!raw) return null;
+
+        const num = (v: any) =>
+          typeof v === "number" && Number.isFinite(v) ? parseFloat(v.toFixed(2)) : null;
+
+        return {
+          symbol: sym,
+          pe: num(raw.pe),
+          pb: num(raw.pb),
+          ps: num(raw.ps),
+          roe: raw.roe != null ? parseFloat((raw.roe * 100).toFixed(2)) : null,
+          roa: raw.roa != null ? parseFloat((raw.roa * 100).toFixed(2)) : null,
+          marketCap: raw.marketCap ? Math.round(raw.marketCap / 1e9) : null,
+          year: raw.year || raw.yearReport,
+          quarter: raw.quarter,
+        };
+      } catch (err) {
+        console.warn(`Lỗi lấy ratios cho ${sym}:`, err);
+        return null;
+      }
+    },
+    3_600_000 // 1 hour TTL
+  ) as Promise<ValuationRatios | null>;
+}
+
+/**
  * Lấy thông tin cơ bản và tài chính doanh nghiệp
  */
 export async function getFundamentals(
@@ -383,12 +469,20 @@ export async function getFundamentals(
         // Continue if income statement fails
       }
 
+      let ratios: ValuationRatios | null = null;
+      try {
+        ratios = await getRatios(sym);
+      } catch {
+        // Continue if ratios fails
+      }
+
       return {
         symbol: sym,
         period,
         companyName: profile?.companyName || sym,
         industry: profile?.industry || "Chưa phân loại",
         metrics: financials || {},
+        ratios,
         asOf: new Date().toISOString(),
       };
     },

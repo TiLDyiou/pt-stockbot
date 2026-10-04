@@ -36,6 +36,18 @@ export interface HistoryResult {
   asOf: string;
 }
 
+export interface ValuationRatios {
+  symbol: string;
+  pe: number | null;
+  pb: number | null;
+  ps: number | null;
+  roe?: number | null;
+  roa?: number | null;
+  marketCap?: number | null;
+  year?: string | number;
+  quarter?: number;
+}
+
 export interface FundamentalMetric {
   name: string;
   value: number | string | null;
@@ -48,6 +60,7 @@ export interface FundamentalsResult {
   companyName?: string;
   industry?: string;
   metrics: Record<string, any>;
+  ratios?: ValuationRatios | null;
   asOf: string;
 }
 

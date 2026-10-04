@@ -77,4 +77,30 @@ describe("stockTools", () => {
       expect(valid.success).toBe(true);
     });
   });
+
+  describe("get_ratios", () => {
+    it("validates ticker length", () => {
+      const invalid = stockTools.get_ratios.parameters.safeParse({ ticker: "F" });
+      expect(invalid.success).toBe(false);
+
+      const valid = stockTools.get_ratios.parameters.safeParse({ ticker: "FPT" });
+      expect(valid.success).toBe(true);
+    });
+
+    it("returns formatted ratios on success", async () => {
+      const mockRatios = {
+        symbol: "FPT",
+        pe: 11.66,
+        pb: 2.93,
+        ps: 1.84,
+      };
+      vi.spyOn(vnstockClient, "getRatios").mockResolvedValue(mockRatios as any);
+
+      const res = await (stockTools.get_ratios.execute as any)(
+        { ticker: "FPT" },
+        { messages: [] }
+      );
+      expect(res).toEqual({ ok: true, data: mockRatios });
+    });
+  });
 });
