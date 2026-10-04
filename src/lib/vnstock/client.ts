@@ -66,6 +66,35 @@ export async function ensureVnstockInit(): Promise<void> {
   return initPromise;
 }
 
+export const INDEX_MAP: Record<string, string> = {
+  VNINDEX: "VNINDEX",
+  "VN-INDEX": "VNINDEX",
+  VN30: "VN30",
+  "VN-30": "VN30",
+  HNX: "HNXIndex",
+  HNXINDEX: "HNXIndex",
+  "HNX-INDEX": "HNXIndex",
+  HNX30: "HNX30",
+  UPCOM: "HNXUpcomIndex",
+  UPCOMINDEX: "HNXUpcomIndex",
+  "UPCOM-INDEX": "HNXUpcomIndex",
+};
+
+/**
+ * Ánh xạ mã chỉ số thị trường sang mã chính xác của vnstock-js
+ * Ví dụ: "HNX" -> "HNXIndex", "UPCOM" -> "HNXUpcomIndex"
+ */
+export function resolveMarketSymbol(ticker: string): string {
+  const raw = ticker.trim().toUpperCase();
+  const clean = raw.replace(/[-_\s]/g, "");
+  if (clean === "HNX" || clean === "HNXINDEX") return "HNXIndex";
+  if (clean === "UPCOM" || clean === "UPCOMINDEX" || clean === "HNXUPCOMINDEX") return "HNXUpcomIndex";
+  if (clean === "VNINDEX") return "VNINDEX";
+  if (clean === "VN30") return "VN30";
+  if (clean === "HNX30") return "HNX30";
+  return INDEX_MAP[raw] || raw;
+}
+
 /**
  * Tra cứu mã cổ phiếu theo từ khóa
  */
@@ -94,6 +123,27 @@ export async function searchTicker(query: string): Promise<SearchTickerResult[]>
           exchange: "HOSE",
         });
       }
+      if ("HNX".includes(qUpper) || "HNXINDEX".includes(qUpper)) {
+        filtered.unshift({
+          symbol: "HNX",
+          name: "Chỉ số HNX-Index (Sở GDCK Hà Nội)",
+          exchange: "HNX",
+        });
+      }
+      if ("UPCOM".includes(qUpper)) {
+        filtered.unshift({
+          symbol: "UPCOM",
+          name: "Chỉ số UPCoM (Sở GDCK Hà Nội)",
+          exchange: "UPCOM",
+        });
+      }
+      if ("VN30".includes(qUpper)) {
+        filtered.unshift({
+          symbol: "VN30",
+          name: "Chỉ số VN30 (Nhóm 30 cổ phiếu lớn)",
+          exchange: "HOSE",
+        });
+      }
 
       return filtered.slice(0, 6);
     },
@@ -115,16 +165,17 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
       const { stock, market, recentHistory, quickQuote } = await import("vnstock-js");
       const asOf = new Date().toISOString();
 
-      const INDEX_MAP: Record<string, string> = {
-        VNINDEX: "VNINDEX",
-        VN30: "VN30",
-        HNX: "HNXIndex",
-        HNXINDEX: "HNXIndex",
-        UPCOM: "HNXUpcomIndex",
-      };
-
       // 1. Handle Index symbols (VNINDEX, VN30, HNX, UPCOM)
-      if (sym in INDEX_MAP) {
+      const indexSymbol = resolveMarketSymbol(sym);
+      const isIndex =
+        indexSymbol !== sym ||
+        sym === "VNINDEX" ||
+        sym === "VN30" ||
+        sym === "HNX" ||
+        sym === "HNXINDEX" ||
+        sym === "UPCOM";
+
+      if (isIndex) {
         if (sym === "VNINDEX") {
           try {
             const ov = await withTimeout(market.overview(), getTimeoutMs(), "Tổng quan VNINDEX");
@@ -147,7 +198,6 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
           }
         }
 
-        const indexSymbol = INDEX_MAP[sym];
         try {
           const hist = await withTimeout(
             recentHistory(indexSymbol, 2),
@@ -259,15 +309,16 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
  */
 export async function getHistory(ticker: string, days = 60): Promise<HistoryResult> {
   const sym = ticker.trim().toUpperCase();
+  const querySym = resolveMarketSymbol(sym);
   const safeDays = Math.min(Math.max(days, 5), 250);
-  const cacheKey = `history:${sym}:${safeDays}`;
+  const cacheKey = `history:${querySym}:${safeDays}`;
 
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
       const { recentHistory } = await import("vnstock-js");
       const candles = await withTimeout(
-        recentHistory(sym, safeDays),
+        recentHistory(querySym, safeDays),
         getTimeoutMs(),
         `Lịch sử giá ${sym}`
       );
@@ -321,15 +372,16 @@ export async function getHistory(ticker: string, days = 60): Promise<HistoryResu
  */
 export async function getCandles(ticker: string, days = 120): Promise<CandleItem[]> {
   const sym = ticker.trim().toUpperCase();
+  const querySym = resolveMarketSymbol(sym);
   const safeDays = Math.min(Math.max(days, 5), 365);
-  const cacheKey = `candles:${sym}:${safeDays}`;
+  const cacheKey = `candles:${querySym}:${safeDays}`;
 
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
       const { recentHistory } = await import("vnstock-js");
       const raw = await withTimeout(
-        recentHistory(sym, safeDays),
+        recentHistory(querySym, safeDays),
         getTimeoutMs(),
         `Nến biểu đồ ${sym}`
       );
@@ -355,13 +407,14 @@ export async function getSparkline(
   days = 20
 ): Promise<{ date: string; close: number }[]> {
   const sym = ticker.trim().toUpperCase();
-  const cacheKey = `sparkline:${sym}:${days}`;
+  const querySym = resolveMarketSymbol(sym);
+  const cacheKey = `sparkline:${querySym}:${days}`;
 
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
       const { recentHistory } = await import("vnstock-js");
-      const raw = await withTimeout(recentHistory(sym, days), getTimeoutMs(), `Sparkline ${sym}`);
+      const raw = await withTimeout(recentHistory(querySym, days), getTimeoutMs(), `Sparkline ${sym}`);
       return (raw || []).map((c) => ({
         date: c.date,
         close: c.close,
@@ -476,11 +529,19 @@ export async function getFundamentals(
         // Continue if ratios fails
       }
 
+      const INDEX_NAMES: Record<string, string> = {
+        VNINDEX: "Chỉ số VN-Index",
+        VN30: "Chỉ số VN30",
+        HNX: "Chỉ số HNX-Index",
+        HNXINDEX: "Chỉ số HNX-Index",
+        UPCOM: "Chỉ số UPCoM",
+      };
+
       return {
         symbol: sym,
         period,
-        companyName: profile?.companyName || sym,
-        industry: profile?.industry || "Chưa phân loại",
+        companyName: profile?.companyName || INDEX_NAMES[sym] || sym,
+        industry: profile?.industry || (sym in INDEX_NAMES ? "Chỉ số thị trường" : "Chưa phân loại"),
         metrics: financials || {},
         ratios,
         asOf: new Date().toISOString(),

@@ -56,6 +56,7 @@ interface CompareSuggestionItem {
 const POPULAR_COMPARE_TICKERS: CompareSuggestionItem[] = [
   { symbol: "VNINDEX", name: "Chỉ số VN-Index", exchange: "HOSE" },
   { symbol: "VN30", name: "Chỉ số VN30", exchange: "HOSE" },
+  { symbol: "HNX", name: "Chỉ số HNX-Index", exchange: "HNX" },
   { symbol: "FPT", name: "Công ty Cổ phần FPT", exchange: "HOSE" },
   { symbol: "HPG", name: "Tập đoàn Hòa Phát", exchange: "HOSE" },
   { symbol: "VCB", name: "Vietcombank", exchange: "HOSE" },
@@ -738,7 +739,7 @@ export default function StockChartClient({
               {symbol}
             </span>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 font-medium">
-              HOSE
+              {symbol === "HNX" ? "HNX" : symbol === "UPCOM" ? "UPCOM" : "HOSE"}
             </span>
             <GripVerticalIcon
               size={13}

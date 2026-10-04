@@ -123,4 +123,19 @@ describe("market-data", () => {
       expect(ssiArea / vpbArea).toBeCloseTo(2.0, 1);
     });
   });
+
+  describe("resolveMarketSymbol", () => {
+    it("maps index abbreviations to vnstock-js compliant symbols", async () => {
+      const { resolveMarketSymbol } = await import("@/lib/vnstock/client");
+      expect(resolveMarketSymbol("HNX")).toBe("HNXIndex");
+      expect(resolveMarketSymbol("hnx")).toBe("HNXIndex");
+      expect(resolveMarketSymbol("HNX-INDEX")).toBe("HNXIndex");
+      expect(resolveMarketSymbol("HNXINDEX")).toBe("HNXIndex");
+      expect(resolveMarketSymbol("UPCOM")).toBe("HNXUpcomIndex");
+      expect(resolveMarketSymbol("upcom")).toBe("HNXUpcomIndex");
+      expect(resolveMarketSymbol("VNINDEX")).toBe("VNINDEX");
+      expect(resolveMarketSymbol("VN30")).toBe("VN30");
+      expect(resolveMarketSymbol("FPT")).toBe("FPT");
+    });
+  });
 });
