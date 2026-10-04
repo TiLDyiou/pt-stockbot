@@ -139,7 +139,7 @@ function SortableItem({
               onHoverRec(symbol, recommendation, rect);
             }}
             onMouseLeave={onLeaveRec}
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border transition-transform hover:scale-105 cursor-help select-none shrink-0 ${
+            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border transition-transform hover:scale-105 cursor-help select-none shrink-0 ${
               recommendation.action === "Mua"
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                 : recommendation.action === "Không mua"
@@ -147,15 +147,6 @@ function SortableItem({
                 : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
             }`}
           >
-            <span
-              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                recommendation.action === "Mua"
-                  ? "bg-emerald-500"
-                  : recommendation.action === "Không mua"
-                  ? "bg-rose-500"
-                  : "bg-amber-500"
-              }`}
-            />
             <span>{recommendation.action}</span>
           </div>
         ) : null}
@@ -573,8 +564,7 @@ export function WatchlistWidget({
 
           {/* Footer Timestamp */}
           {hoveredRec.rec.updatedAt && (
-            <div className="mt-2.5 pt-1.5 border-t border-slate-800/60 dark:border-zinc-800/60 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Cập nhật:</span>
+            <div className="mt-2.5 pt-1.5 border-t border-slate-800/60 dark:border-zinc-800/60 flex items-center justify-end text-[10px] text-slate-400 font-mono">
               <span>
                 {new Date(hoveredRec.rec.updatedAt).toLocaleTimeString("vi-VN", {
                   hour: "2-digit",
