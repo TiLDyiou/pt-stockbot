@@ -70,17 +70,31 @@ export async function ensureVnstockInit(): Promise<void> {
  */
 export async function searchTicker(query: string): Promise<SearchTickerResult[]> {
   await ensureVnstockInit();
-  const cacheKey = `search:${query.trim().toUpperCase()}`;
+  const qUpper = query.trim().toUpperCase();
+  const cacheKey = `search:${qUpper}`;
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
       const { stock } = await import("vnstock-js");
-      const results = stock.search(query, { limit: 5 });
-      return (results || []).slice(0, 5).map((item) => ({
-        symbol: item.symbol,
-        name: item.companyName || item.companyNameEn || item.symbol,
-        exchange: item.exchange || "HOSE",
-      }));
+      const results = stock.search(query, { limit: 10 });
+      const filtered = (results || [])
+        .filter((item) => item.exchange !== "DELISTED")
+        .slice(0, 6)
+        .map((item) => ({
+          symbol: item.symbol,
+          name: item.companyName || item.companyNameEn || item.symbol,
+          exchange: item.exchange || "HOSE",
+        }));
+
+      if ("VNINDEX".includes(qUpper) || qUpper.includes("INDEX")) {
+        filtered.unshift({
+          symbol: "VNINDEX",
+          name: "Chỉ số VN-Index (Sở GDCK TP.HCM)",
+          exchange: "HOSE",
+        });
+      }
+
+      return filtered.slice(0, 6);
     },
     3_600_000 // 1 hour TTL
   ) as Promise<SearchTickerResult[]>;
@@ -97,8 +111,56 @@ export async function getQuote(ticker: string): Promise<QuoteResult> {
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
-      const { quickQuote, stock } = await import("vnstock-js");
+      const { quickQuote, stock, market, recentHistory } = await import("vnstock-js");
       const asOf = new Date().toISOString();
+
+      if (sym === "VNINDEX") {
+        try {
+          const ov = await withTimeout(market.overview(), getTimeoutMs(), "Tổng quan VNINDEX");
+          if (ov && ov.index && ov.index.close) {
+            const idx = ov.index;
+            const ref = idx.close - (idx.change || 0);
+            return {
+              symbol: "VNINDEX",
+              price: idx.close,
+              changePct: parseFloat((idx.changePercent || 0).toFixed(2)),
+              volume: idx.volume || 0,
+              ceiling: 0,
+              floor: 0,
+              reference: ref,
+              asOf,
+            };
+          }
+        } catch {
+          // Fallback to recentHistory
+        }
+
+        try {
+          const hist = await withTimeout(
+            recentHistory("VNINDEX", 2),
+            getTimeoutMs(),
+            "Lịch sử VNINDEX"
+          );
+          if (hist && hist.length > 0) {
+            const last = hist[hist.length - 1];
+            const prev = hist.length > 1 ? hist[hist.length - 2].close : last.open;
+            const change = last.close - prev;
+            const changePct = prev > 0 ? (change / prev) * 100 : 0;
+            return {
+              symbol: "VNINDEX",
+              price: last.close,
+              changePct: parseFloat(changePct.toFixed(2)),
+              volume: last.volume || 0,
+              ceiling: 0,
+              floor: 0,
+              reference: prev,
+              asOf,
+            };
+          }
+        } catch {
+          // Continue
+        }
+      }
 
       try {
         const qq = await withTimeout(quickQuote(sym), getTimeoutMs(), `Lấy giá ${sym}`);

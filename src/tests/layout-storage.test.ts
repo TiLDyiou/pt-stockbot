@@ -67,7 +67,7 @@ describe("layout-storage", () => {
 
   it("accepts and loads valid layout successfully", () => {
     const customLayout = {
-      version: 1 as const,
+      version: 2 as const,
       widgets: [
         {
           id: "chart-vcb",

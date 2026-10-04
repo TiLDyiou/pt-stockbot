@@ -71,7 +71,7 @@ export function DashboardContainer({
         size: "double",
       };
       const updated = [newWidget, ...prev];
-      saveDashboardLayout({ version: 1, widgets: updated });
+      saveDashboardLayout({ version: 2, widgets: updated });
       return updated;
     });
 
@@ -89,20 +89,20 @@ export function DashboardContainer({
     if (oldIndex !== -1 && newIndex !== -1) {
       const updated = arrayMove(widgets, oldIndex, newIndex);
       setWidgets(updated);
-      saveDashboardLayout({ version: 1, widgets: updated });
+      saveDashboardLayout({ version: 2, widgets: updated });
     }
   };
 
   const handleResize = (id: string, newSize: WidgetSize) => {
     const updated = widgets.map((w) => (w.id === id ? { ...w, size: newSize } : w));
     setWidgets(updated);
-    saveDashboardLayout({ version: 1, widgets: updated });
+    saveDashboardLayout({ version: 2, widgets: updated });
   };
 
   const handleRemove = (id: string) => {
     const updated = widgets.filter((w) => w.id !== id);
     setWidgets(updated);
-    saveDashboardLayout({ version: 1, widgets: updated });
+    saveDashboardLayout({ version: 2, widgets: updated });
   };
 
   const handleResetLayout = () => {
@@ -127,7 +127,7 @@ export function DashboardContainer({
 
     const updated = [...widgets, newWidget];
     setWidgets(updated);
-    saveDashboardLayout({ version: 1, widgets: updated });
+    saveDashboardLayout({ version: 2, widgets: updated });
     setNewChartTicker("");
     setIsAddOpen(false);
   };
@@ -142,7 +142,7 @@ export function DashboardContainer({
     };
     const updated = [...widgets, newWidget];
     setWidgets(updated);
-    saveDashboardLayout({ version: 1, widgets: updated });
+    saveDashboardLayout({ version: 2, widgets: updated });
     setIsAddOpen(false);
   };
 
@@ -158,7 +158,7 @@ export function DashboardContainer({
       };
       const updated = [newWidget, ...widgets];
       setWidgets(updated);
-      saveDashboardLayout({ version: 1, widgets: updated });
+      saveDashboardLayout({ version: 2, widgets: updated });
     }
   };
 

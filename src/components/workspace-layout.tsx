@@ -5,6 +5,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ChatPanel } from "./chat/chat-panel";
 import { DashboardContainer } from "./dashboard/dashboard-container";
 import { DisclaimerModal } from "./chat/disclaimer-modal";
+import { StockSearchBar } from "./search/stock-search-bar";
 import { isMarketOpen } from "@/lib/vnstock/market-hours";
 
 export function WorkspaceLayout() {
@@ -72,19 +73,21 @@ export function WorkspaceLayout() {
           </div>
         </div>
 
-        {/* Center: Market Status Indicator & Mobile Tabs */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-slate-100 dark:bg-terminal-subtle text-[11px] font-mono border border-slate-200 dark:border-slate-700/60">
+        {/* Center: Search Bar */}
+        <div className="flex-1 max-w-sm mx-4">
+          <StockSearchBar onSelectSymbol={handleOpenChart} />
+        </div>
+
+        {/* Right: Market Status Indicator & Theme Switcher */}
+        <div className="flex items-center gap-2.5">
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded bg-slate-100 dark:bg-terminal-subtle text-[11px] font-mono border border-slate-200 dark:border-slate-700/60">
             <span
               className={`w-2 h-2 rounded-full ${
                 marketActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
               }`}
             />
             <span className="text-slate-600 dark:text-slate-300 font-medium">
-              {marketActive ? "TRONG PHIÊN GIAO DỊCH" : "THỊ TRƯỜNG ĐÓNG CỬA"}
-            </span>
-            <span className="text-slate-400 hidden md:inline text-[10px]">
-              (UTC+7)
+              {marketActive ? "TRONG PHIÊN" : "ĐÓNG CỬA"}
             </span>
           </div>
 

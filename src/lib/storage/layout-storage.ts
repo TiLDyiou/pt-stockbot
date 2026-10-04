@@ -1,5 +1,5 @@
 export const STORAGE_KEYS = {
-  LAYOUT: "stockbot:v1:layout",
+  LAYOUT: "stockbot:v2:layout",
   WATCHLIST: "stockbot:v1:watchlist",
   DISCLAIMER: "stockbot:v1:disclaimer",
   CHAT_HISTORY: "stockbot:v1:chat_history",
@@ -17,20 +17,20 @@ export interface DashboardWidget {
 }
 
 export interface DashboardLayout {
-  version: 1;
+  version: 2;
   widgets: DashboardWidget[];
 }
 
 export const DEFAULT_TICKERS = ["FPT", "VCB", "HPG", "MWG", "TCB"];
 
 export const DEFAULT_LAYOUT: DashboardLayout = {
-  version: 1,
+  version: 2,
   widgets: [
     {
-      id: "chart-fpt",
+      id: "chart-vnindex",
       type: "chart",
-      title: "Biểu đồ FPT",
-      symbol: "FPT",
+      title: "Biểu đồ VNINDEX",
+      symbol: "VNINDEX",
       size: "double",
     },
     {
@@ -70,7 +70,7 @@ export function loadDashboardLayout(customStorage?: Storage | null): DashboardLa
     if (!raw) return DEFAULT_LAYOUT;
 
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.widgets)) {
+    if (!parsed || parsed.version !== 2 || !Array.isArray(parsed.widgets)) {
       return DEFAULT_LAYOUT;
     }
 
@@ -84,7 +84,7 @@ export function loadDashboardLayout(customStorage?: Storage | null): DashboardLa
     );
 
     return {
-      version: 1,
+      version: 2,
       widgets: validWidgets.length > 0 ? validWidgets : DEFAULT_LAYOUT.widgets,
     };
   } catch {
