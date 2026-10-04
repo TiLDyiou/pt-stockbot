@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -36,6 +36,7 @@ import {
   BookmarkIcon,
   PlusIcon,
 } from "lucide-animated";
+import { RefreshCw } from "lucide-react";
 
 interface WatchlistWidgetProps {
   onSelectSymbol?: (symbol: string) => void;
@@ -59,6 +60,7 @@ function SortableItem({
   onRemove,
   onHoverRec,
   onLeaveRec,
+  onRefreshRec,
 }: {
   symbol: string;
   quote?: TickerQuote;
@@ -69,6 +71,7 @@ function SortableItem({
   onRemove: (sym: string) => void;
   onHoverRec: (sym: string, rec: TickerRecommendation, rect: DOMRect) => void;
   onLeaveRec: () => void;
+  onRefreshRec: (sym: string) => void;
 }) {
   const {
     attributes,
@@ -97,12 +100,12 @@ function SortableItem({
       onClick={() => onSelect(symbol)}
     >
       {/* Drag handle, Symbol & AI Recommendation Pill */}
-      <div className="flex items-center gap-2 sm:gap-2.5 min-w-[130px]">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-[140px] sm:min-w-[155px]">
         <button
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing text-slate-300 dark:text-zinc-600 hover:text-slate-600 dark:hover:text-zinc-300 p-0.5 transition-colors"
+          className="cursor-grab active:cursor-grabbing text-slate-300 dark:text-zinc-600 hover:text-slate-600 dark:hover:text-zinc-300 p-0.5 transition-colors shrink-0"
           title="Kéo thả sắp xếp thứ tự"
         >
           <GripVerticalIcon size={14} animateOnHover />
@@ -115,7 +118,7 @@ function SortableItem({
             e.dataTransfer.setData("text/plain", symbol);
             e.dataTransfer.effectAllowed = "copy";
           }}
-          className="flex items-center cursor-grab active:cursor-grabbing"
+          className="flex items-center cursor-grab active:cursor-grabbing mr-1"
           title={`Kéo mã ${symbol} vào biểu đồ hoặc khung chat`}
         >
           <div className="text-left font-mono">
@@ -155,11 +158,31 @@ function SortableItem({
             />
             <span>{recommendation.action}</span>
           </div>
-        ) : isFetchingRec ? (
-          <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-zinc-800/80 animate-pulse shrink-0">
-            <span>AI...</span>
-          </div>
         ) : null}
+
+        {/* Manual Refresh / Request Recommendation Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRefreshRec(symbol);
+          }}
+          disabled={isFetchingRec}
+          className={`p-1 rounded transition-colors shrink-0 disabled:opacity-50 ${
+            recommendation
+              ? "text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800"
+              : "text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[10px] px-1.5 py-0.5 flex items-center gap-1 font-mono"
+          }`}
+          title={recommendation ? "Cập nhật khuyến cáo" : "Lấy khuyến cáo AI"}
+        >
+          <RefreshCw
+            size={11}
+            className={isFetchingRec ? "animate-spin text-emerald-500" : ""}
+          />
+          {!recommendation && (
+            <span>{isFetchingRec ? "AI..." : "Khuyến cáo"}</span>
+          )}
+        </button>
       </div>
 
       {/* Sparkline (30 days) */}
@@ -223,7 +246,7 @@ export function WatchlistWidget({
     Record<string, { date: string; close: number }[]>
   >({});
   const [recommendations, setRecommendations] = useState<WatchlistRecommendations>({});
-  const [isFetchingRecs, setIsFetchingRecs] = useState(false);
+  const [fetchingRecSymbols, setFetchingRecSymbols] = useState<Record<string, boolean>>({});
   const [hoveredRec, setHoveredRec] = useState<{
     symbol: string;
     rec: TickerRecommendation;
@@ -231,7 +254,6 @@ export function WatchlistWidget({
   } | null>(null);
   const [newTicker, setNewTicker] = useState("");
   const [isMounted, setIsMounted] = useState(false);
-  const backgroundFetchedRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -248,29 +270,32 @@ export function WatchlistWidget({
     setIsMounted(true);
   }, []);
 
-  const refreshRecommendations = useCallback(async (currentTickers: string[]) => {
-    if (currentTickers.length === 0) return;
-    setIsFetchingRecs(true);
+  const handleRefreshRec = useCallback(async (sym: string) => {
+    setFetchingRecSymbols((prev) => ({ ...prev, [sym]: true }));
     try {
       const res = await fetch("/api/watchlist/recommendations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbols: currentTickers }),
+        body: JSON.stringify({ symbols: [sym] }),
       });
       if (res.ok) {
         const json = await res.json();
-        if (json.recommendations) {
+        if (json.recommendations && json.recommendations[sym]) {
+          const newRec = json.recommendations[sym];
           setRecommendations((prev) => {
-            const merged = { ...prev, ...json.recommendations };
+            const merged = { ...prev, [sym]: newRec };
             saveWatchlistRecommendations(merged);
             return merged;
           });
+          setHoveredRec((prev) =>
+            prev?.symbol === sym ? { ...prev, rec: newRec } : prev
+          );
         }
       }
     } catch (err) {
-      console.error("Lỗi cập nhật khuyến cáo danh mục:", err);
+      console.error(`Lỗi cập nhật khuyến cáo ${sym}:`, err);
     } finally {
-      setIsFetchingRecs(false);
+      setFetchingRecSymbols((prev) => ({ ...prev, [sym]: false }));
     }
   }, []);
 
@@ -315,14 +340,6 @@ export function WatchlistWidget({
     }
   }, [isMounted, tickers, fetchWatchlistData]);
 
-  // Cập nhật khuyến cáo chạy nền sau mỗi lần mở web
-  useEffect(() => {
-    if (isMounted && tickers.length > 0 && !backgroundFetchedRef.current) {
-      backgroundFetchedRef.current = true;
-      refreshRecommendations(tickers);
-    }
-  }, [isMounted, tickers, refreshRecommendations]);
-
   // Tự động đóng tooltip khi cuộn trang hoặc đổi kích thước
   useEffect(() => {
     const handleDismissTooltip = () => setHoveredRec(null);
@@ -363,9 +380,6 @@ export function WatchlistWidget({
     setTickers(updated);
     saveWatchlist(updated);
     setNewTicker("");
-
-    // Tải khuyến cáo chạy nền cho mã mới thêm
-    refreshRecommendations([sym]);
   };
 
   const handleRemoveTicker = (sym: string) => {
@@ -452,7 +466,7 @@ export function WatchlistWidget({
 
       {/* Table Column Labels */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-50/60 dark:bg-zinc-900/40 border-b border-slate-100 dark:border-zinc-800/40 text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0">
-        <span className="min-w-[130px]">Mã & Khuyến cáo</span>
+        <span className="min-w-[140px] sm:min-w-[155px]">Mã & Khuyến cáo</span>
         <span className="hidden sm:inline">Xu hướng 30N</span>
         <div className="flex items-center gap-3">
           <span>Giá & Biến động</span>
@@ -483,11 +497,12 @@ export function WatchlistWidget({
                   quote={quotes[sym]}
                   sparkline={sparklines[sym]}
                   recommendation={recommendations[sym]}
-                  isFetchingRec={isFetchingRecs && !recommendations[sym]}
+                  isFetchingRec={Boolean(fetchingRecSymbols[sym])}
                   onSelect={(s) => onSelectSymbol && onSelectSymbol(s)}
                   onRemove={handleRemoveTicker}
                   onHoverRec={(s, rec, rect) => setHoveredRec({ symbol: s, rec, rect })}
                   onLeaveRec={() => setHoveredRec(null)}
+                  onRefreshRec={handleRefreshRec}
                 />
               ))}
             </SortableContext>
@@ -501,16 +516,23 @@ export function WatchlistWidget({
           style={{
             position: "fixed",
             top:
-              hoveredRec.rect.top > 180
+              typeof window !== "undefined" &&
+              window.innerHeight - hoveredRec.rect.bottom < 190 &&
+              hoveredRec.rect.top > 200
                 ? undefined
-                : Math.max(8, hoveredRec.rect.bottom + 6),
+                : Math.max(8, hoveredRec.rect.bottom + 8),
             bottom:
-              hoveredRec.rect.top > 180
-                ? window.innerHeight - hoveredRec.rect.top + 6
+              typeof window !== "undefined" &&
+              window.innerHeight - hoveredRec.rect.bottom < 190 &&
+              hoveredRec.rect.top > 200
+                ? window.innerHeight - hoveredRec.rect.top + 8
                 : undefined,
             left: Math.max(
               12,
-              Math.min(hoveredRec.rect.left - 8, window.innerWidth - 300)
+              Math.min(
+                hoveredRec.rect.left,
+                typeof window !== "undefined" ? window.innerWidth - 300 : 300
+              )
             ),
           }}
           className="z-50 w-72 p-3 rounded-xl bg-slate-900/95 dark:bg-[#18181b]/95 text-slate-100 border border-slate-700/80 dark:border-zinc-700/80 shadow-2xl backdrop-blur-md pointer-events-none animate-in fade-in zoom-in-95 duration-150 font-sans text-xs select-none"
@@ -537,15 +559,12 @@ export function WatchlistWidget({
                   : "CẦN THEO DÕI"}
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">
-              Khuyến cáo AI
-            </span>
           </div>
 
           {/* Rationale */}
           <div className="text-[11px] leading-relaxed text-slate-300 dark:text-zinc-300">
             <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 dark:text-zinc-500 mb-1 font-mono">
-              Lí do khuyến cáo:
+              Phân tích:
             </div>
             <p className="whitespace-normal leading-normal">
               {hoveredRec.rec.rationale}
