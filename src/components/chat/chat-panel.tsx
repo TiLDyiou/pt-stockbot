@@ -479,7 +479,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
           >
             {isDraggingOver && (
               <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-950/90 backdrop-blur-xs border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
-                <span>Thả mã hoặc module Danh mục để phân tích xu hướng (tự động xuống dòng)</span>
+                <span>Thả mã hoặc module Danh mục để phân tích xu hướng</span>
               </div>
             )}
             <div className="w-full max-h-[180px] overflow-y-auto">
