@@ -389,16 +389,6 @@ export function MarketOverviewWidget({
               <LiquidityCompareView liquidity={data.liquidity} />
             </div>
           )}
-
-          {/* Footer Bar */}
-          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100/90 dark:bg-zinc-900/60 text-[10px] font-mono text-slate-500 dark:text-zinc-400 border-t border-slate-200/80 dark:border-zinc-800/80 shrink-0">
-            <span>
-              Tổng thanh khoản: <strong className="text-slate-900 dark:text-white">{formatNumber(data.liquidity?.value)} tỷ</strong>
-            </span>
-            <span>
-              Cập nhật: {new Date(data.asOf || Date.now()).toLocaleTimeString("vi-VN")}
-            </span>
-          </div>
         </div>
       )}
     </div>
