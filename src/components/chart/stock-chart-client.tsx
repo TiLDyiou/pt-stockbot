@@ -863,7 +863,7 @@ export default function StockChartClient({
                   className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold rounded-lg transition-all shrink-0 cursor-grab active:cursor-grabbing ${
                     s === symbol
                       ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
+                      : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
                   }`}
                   title={`Kéo tab ${s} vào khung Chat để phân tích hoặc nhấp để mở biểu đồ`}
                 >
@@ -893,7 +893,7 @@ export default function StockChartClient({
                   key={comp.symbol}
                   onClick={() => handleSwapComparisonWithPrimary(comp.symbol)}
                   style={{ borderColor: `${comp.color}80` }}
-                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white/90 dark:bg-zinc-900/90 shadow-2xs shrink-0 cursor-pointer select-none"
+                  className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border bg-white dark:bg-zinc-900 shadow-2xs shrink-0 cursor-pointer select-none"
                 >
                   <span style={{ color: comp.color }}>{comp.symbol}</span>
                   <button
@@ -1111,7 +1111,7 @@ export default function StockChartClient({
             <button
               type="button"
               onClick={() => setIsComparing(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition-colors shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition-colors shrink-0 cursor-pointer"
               title="So sánh với mã cổ phiếu khác"
             >
               <GitCompareArrowsIcon size={12} animateOnHover />
@@ -1149,20 +1149,20 @@ export default function StockChartClient({
             </div>
           </div>
         ) : (
-          <div className="h-12 w-32 bg-slate-100 dark:bg-zinc-800/50 rounded-lg animate-pulse" />
+          <div className="h-12 w-32 bg-slate-100 dark:bg-zinc-800 rounded-lg animate-pulse" />
         )}
 
         {/* Right: Timeframe, Overlays, Compare & Maximize */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
           {/* Timeframe Pill Group */}
-          <div className="flex bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-xl">
+          <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl">
             {(["1M", "3M", "6M", "1Y"] as Timeframe[]).map((tf) => (
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                   timeframe === tf
-                    ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-bold shadow-xs"
+                    ? "bg-emerald-600 text-white font-bold shadow-xs"
                     : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
@@ -1177,8 +1177,8 @@ export default function StockChartClient({
               onClick={() => setShowSma20(!showSma20)}
               className={`px-2.5 py-1 rounded-lg text-xs border transition-colors cursor-pointer ${
                 showSma20
-                  ? "bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 border-transparent line-through"
+                  ? "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-semibold"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 border-slate-200 dark:border-zinc-700 line-through"
               }`}
             >
               SMA20
@@ -1187,8 +1187,8 @@ export default function StockChartClient({
               onClick={() => setShowSma50(!showSma50)}
               className={`px-2.5 py-1 rounded-lg text-xs border transition-colors cursor-pointer ${
                 showSma50
-                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800 font-semibold"
-                  : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 border-transparent line-through"
+                  ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800 font-semibold"
+                  : "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 border-slate-200 dark:border-zinc-700 line-through"
               }`}
             >
               SMA50
@@ -1214,7 +1214,7 @@ export default function StockChartClient({
           {onCloseModule && (
             <button
               onClick={onCloseModule}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 text-xs transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 text-xs transition-colors cursor-pointer"
               title="Đóng module Biểu đồ"
             >
               <XIcon size={15} animateOnHover />
@@ -1317,7 +1317,7 @@ export default function StockChartClient({
             <p className="text-rose-500 text-xs mb-2">{error}</p>
             <button
               onClick={fetchCandles}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-slate-200 dark:bg-zinc-800 rounded-lg text-xs"
+              className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg text-xs cursor-pointer"
             >
               <RefreshCwIcon size={12} animateOnHover />
               <span>Thử lại</span>

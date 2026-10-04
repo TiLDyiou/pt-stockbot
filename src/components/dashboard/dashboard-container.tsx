@@ -484,7 +484,7 @@ export function DashboardContainer({
                 key={modId}
                 type="button"
                 onClick={() => setModuleVisible(modId, true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white text-slate-700 dark:text-zinc-200 font-medium transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:border-emerald-600 dark:hover:text-white text-slate-700 dark:text-zinc-300 font-medium transition-colors cursor-pointer shadow-xs"
               >
                 <Icon size={14} animateOnHover />
                 <span>Mở {label}</span>
@@ -497,10 +497,10 @@ export function DashboardContainer({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-50/70 dark:bg-[#09090b] overflow-hidden select-none">
+    <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#09090b] overflow-hidden select-none">
       {/* 1. Seamless Top Market Ticker Strip */}
       {!maximizedWidget && (
-        <div className="w-full shrink-0 border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-[#111113]/70 backdrop-blur-xs py-0.5 px-0">
+        <div className="w-full shrink-0 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111113] py-0.5 px-0">
           <MarketTickerStrip
             activeSymbol={activeSymbol}
             onSelectSymbol={handleSelectSymbol}

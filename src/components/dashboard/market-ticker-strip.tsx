@@ -114,7 +114,7 @@ export function MarketTickerStrip({
                   e.dataTransfer.effectAllowed = "copy";
                 }}
                 onClick={() => onSelectSymbol(item.symbol)}
-                className="flex shrink-0 items-center gap-2.5 border-r border-slate-200/60 dark:border-zinc-800/60 py-0.5 px-3.5 hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors select-none text-left cursor-grab active:cursor-grabbing font-mono"
+                className="flex shrink-0 items-center gap-2.5 border-r border-slate-200 dark:border-zinc-800 py-0.5 px-3.5 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors select-none text-left cursor-grab active:cursor-grabbing font-mono"
                 title={`Kéo ${item.symbol} vào khung Chat để AI phân tích (hoặc nhấp để xem biểu đồ)`}
               >
                 <span className="font-bold text-xs tracking-wider text-slate-900 dark:text-zinc-100">

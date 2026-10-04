@@ -40,7 +40,7 @@ export function DisclaimerModal() {
 
         <button
           onClick={handleAccept}
-          className="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-xs transition-colors shadow-sm"
+          className="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-xs transition-colors shadow-xs cursor-pointer"
         >
           Tôi đã hiểu và đồng ý
         </button>

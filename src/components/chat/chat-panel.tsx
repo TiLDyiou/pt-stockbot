@@ -410,7 +410,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                 <button
                   key={prompt}
                   onClick={() => handlePromptClick(prompt)}
-                  className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#171718] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200/80 dark:border-zinc-800/80 text-xs text-left text-slate-800 dark:text-zinc-200 transition-all shadow-xs hover:border-slate-300 dark:hover:border-zinc-700"
+                  className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#171718] hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-xs text-left text-slate-800 dark:text-zinc-200 transition-all shadow-xs hover:border-slate-300 dark:hover:border-zinc-700 cursor-pointer"
                 >
                   <span className="font-medium">{prompt}</span>
                   <ArrowRightIcon
@@ -517,8 +517,8 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                 className={cn(
                   "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
                   messages.length > 0 && !isLoading
-                    ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 cursor-pointer shadow-xs active:scale-95"
-                    : "opacity-25 cursor-not-allowed bg-rose-500/5 text-rose-400/60 border border-transparent",
+                    ? "bg-rose-100 hover:bg-rose-200 dark:bg-rose-950 dark:hover:bg-rose-900 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800 cursor-pointer shadow-xs active:scale-95"
+                    : "opacity-30 cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border border-slate-200 dark:border-zinc-700",
                 )}
                 title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
               >
@@ -529,7 +529,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                 <button
                   type="button"
                   onClick={stop}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 text-xs font-semibold transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                   title="Dừng tạo phản hồi"
                 >
                   <BanIcon size={12} animateOnHover />
@@ -543,7 +543,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                     "flex items-center justify-center h-7 w-7 rounded-xl transition-all",
                     input.trim()
                       ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer active:scale-95"
-                      : "bg-slate-200/60 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
+                      : "bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed",
                   )}
                   title="Gửi câu hỏi"
                 >

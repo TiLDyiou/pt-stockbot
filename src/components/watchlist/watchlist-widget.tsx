@@ -96,7 +96,7 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/40 border-b border-slate-100 dark:border-zinc-800/50 transition-colors text-xs cursor-pointer group last:border-b-0"
+      className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800 border-b border-slate-100 dark:border-zinc-800 transition-colors text-xs cursor-pointer group last:border-b-0"
       onClick={() => onSelect(symbol)}
     >
       {/* Drag handle, Symbol & AI Recommendation Pill */}
@@ -162,7 +162,7 @@ function SortableItem({
           className={`p-1 rounded transition-colors shrink-0 disabled:opacity-50 ${
             recommendation
               ? "text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800"
-              : "text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[10px] px-1.5 py-0.5 flex items-center gap-1 font-mono"
+              : "text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[10px] px-1.5 py-0.5 flex items-center gap-1 font-mono cursor-pointer"
           }`}
           title={recommendation ? "Cập nhật khuyến cáo" : "Lấy khuyến cáo AI"}
         >
@@ -216,7 +216,7 @@ function SortableItem({
             e.stopPropagation();
             onRemove(symbol);
           }}
-          className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 dark:text-zinc-600 hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100"
+          className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 dark:text-zinc-600 hover:text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-950 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
           title="Xóa khỏi watchlist"
         >
           <XIcon size={12} animateOnHover />
@@ -431,7 +431,7 @@ export function WatchlistWidget({
               placeholder="+ THÊM MÃ CỔ PHIẾU"
               value={newTicker}
               onChange={(e) => setNewTicker(e.target.value)}
-              className="px-3 py-1.5 text-xs uppercase bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-lg w-44 sm:w-52 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono text-slate-900 dark:text-white placeholder:text-[10px] sm:placeholder:text-[11px] placeholder:font-mono placeholder:text-slate-400 shrink-0"
+              className="px-3 py-1.5 text-xs uppercase bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg w-44 sm:w-52 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono text-slate-900 dark:text-white placeholder:text-[10px] sm:placeholder:text-[11px] placeholder:font-mono placeholder:text-slate-400 shrink-0"
             />
             <button
               type="submit"
@@ -446,7 +446,7 @@ export function WatchlistWidget({
             <button
               type="button"
               onClick={onCloseModule}
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800/80 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700/80 transition-colors cursor-pointer shrink-0"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer shrink-0"
               title="Đóng module Danh mục theo dõi"
             >
               <XIcon size={14} animateOnHover />
@@ -456,7 +456,7 @@ export function WatchlistWidget({
       </div>
 
       {/* Table Column Labels */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-50/60 dark:bg-zinc-900/40 border-b border-slate-100 dark:border-zinc-800/40 text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800 text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0">
         <span className="min-w-[140px] sm:min-w-[155px]">Mã & Khuyến cáo</span>
         <span className="hidden sm:inline">Xu hướng 30N</span>
         <div className="flex items-center gap-3">
@@ -466,7 +466,7 @@ export function WatchlistWidget({
       </div>
 
       {/* Tickers list */}
-      <div className="divide-y divide-slate-100 dark:divide-zinc-800/40 flex-1 min-h-0 overflow-y-auto">
+      <div className="divide-y divide-slate-100 dark:divide-zinc-800 flex-1 min-h-0 overflow-y-auto">
         {tickers.length === 0 ? (
           <p className="text-center text-xs text-slate-400 py-8">
             Danh mục theo dõi đang trống. Thêm mã vào ô trên.

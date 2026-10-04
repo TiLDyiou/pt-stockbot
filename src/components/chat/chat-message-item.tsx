@@ -220,10 +220,10 @@ export function ChatMessageItem({
             <button
               key={ticker}
               onClick={() => onOpenChart && onOpenChart(ticker)}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 text-xs font-mono font-bold transition-all shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-bold transition-all shadow-xs cursor-pointer"
               title={`Mở biểu đồ ${ticker}`}
             >
-              <TrendingUpIcon size={12} className="text-emerald-500" animateOnHover />
+              <TrendingUpIcon size={12} className="text-white" animateOnHover />
               <span>{ticker}</span>
             </button>
           ))}

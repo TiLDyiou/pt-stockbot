@@ -161,13 +161,13 @@ export function WorkspaceLayout() {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 dark:bg-[#09090b] text-slate-800 dark:text-zinc-100 font-sans">
       {/* Top Header (Compact 44px for maximum vertical canvas) */}
-      <header className="h-[44px] px-2.5 sm:px-3.5 bg-white dark:bg-[#09090b] border-b border-slate-200/80 dark:border-zinc-800/80 flex items-center justify-between shrink-0 select-none z-20">
+      <header className="h-[44px] px-2.5 sm:px-3.5 bg-white dark:bg-[#09090b] border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between shrink-0 select-none z-20">
         {/* Left: Brand Identity & Sidebar Toggle */}
         <div className="flex items-center gap-2">
           {!isMobile && (
             <button
               onClick={toggleChatPanel}
-              className="p-1 rounded-md text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+              className="p-1 rounded-md text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               title={isChatCollapsed ? "Mở rộng Trợ lý AI" : "Thu gọn Trợ lý AI (Mở rộng tối đa bề ngang)"}
             >
               {isChatCollapsed ? (
@@ -266,16 +266,16 @@ export function WorkspaceLayout() {
                   onClick={() => handleToggleModule(modId)}
                   className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 rounded-md transition-all cursor-pointer ${
                     isDragTarget
-                      ? "ring-2 ring-emerald-500 bg-emerald-500/20 scale-105"
+                      ? "ring-2 ring-emerald-500 bg-emerald-600 text-white scale-105"
                       : isVisible
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                      : "bg-slate-100 dark:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 border border-transparent hover:text-slate-700 dark:hover:text-zinc-300"
+                      ? "bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-xs border border-emerald-600"
+                      : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
                   }`}
                   title={`Kéo để đổi thứ tự module, nhấp để ${isVisible ? "đóng" : "mở"} ${label}`}
                 >
                   <GripVerticalIcon
                     size={11}
-                    className="text-slate-400/80 -ml-0.5 cursor-grab active:cursor-grabbing shrink-0"
+                    className="text-slate-400 -ml-0.5 cursor-grab active:cursor-grabbing shrink-0"
                   />
                   <Icon size={12} animateOnHover />
                   <span>{label}</span>
@@ -291,7 +291,7 @@ export function WorkspaceLayout() {
             <button
               type="button"
               onClick={handleResetLayout}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono text-slate-400 hover:text-slate-700 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors cursor-pointer"
               title="Khôi phục bố cục và kích thước mặc định"
             >
               <RefreshCcwIcon size={11} animateOnHover />
@@ -303,23 +303,23 @@ export function WorkspaceLayout() {
 
           {/* Mobile Tab Switcher */}
           {isMobile && (
-            <div className="flex bg-slate-100 dark:bg-zinc-800/80 p-0.5 rounded-lg text-xs font-medium">
+            <div className="flex bg-slate-100 dark:bg-zinc-800 p-0.5 rounded-lg text-xs font-medium">
               <button
                 onClick={() => setActiveTab("chat")}
-                className={`px-2.5 py-0.5 rounded-md transition-colors ${
+                className={`px-2.5 py-0.5 rounded-md transition-colors cursor-pointer ${
                   activeTab === "chat"
-                    ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-semibold shadow-xs"
-                    : "text-slate-600 dark:text-zinc-400"
+                    ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 Trò chuyện
               </button>
               <button
                 onClick={() => setActiveTab("dashboard")}
-                className={`px-2.5 py-0.5 rounded-md transition-colors ${
+                className={`px-2.5 py-0.5 rounded-md transition-colors cursor-pointer ${
                   activeTab === "dashboard"
-                    ? "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-semibold shadow-xs"
-                    : "text-slate-600 dark:text-zinc-400"
+                    ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 Bảng điều khiển
@@ -330,7 +330,7 @@ export function WorkspaceLayout() {
           {/* Theme Switcher */}
           <button
             onClick={toggleDarkMode}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700/80 text-xs font-mono text-slate-600 dark:text-zinc-300 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-xs font-mono text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
             title="Đổi giao diện Sáng / Tối"
           >
             {isDarkMode ? (

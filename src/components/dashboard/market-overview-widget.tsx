@@ -97,7 +97,7 @@ export function MarketOverviewWidget({
           <button
             onClick={fetchOverview}
             disabled={isLoading}
-            className="p-1.5 rounded-md bg-slate-200/70 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="p-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
             title="Làm mới dữ liệu thị trường"
           >
             <RefreshCwIcon size={13} className={isLoading ? "animate-spin" : ""} animateOnHover />
@@ -106,7 +106,7 @@ export function MarketOverviewWidget({
           {onToggleMaximize && (
             <button
               onClick={onToggleMaximize}
-              className="p-1.5 rounded-md bg-slate-200/70 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
               title={isMaximized ? "Thu nhỏ về bảng chia" : "Mở rộng toàn màn hình"}
             >
               {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
@@ -116,7 +116,7 @@ export function MarketOverviewWidget({
           {onCloseModule && (
             <button
               onClick={onCloseModule}
-              className="p-1.5 rounded-md bg-slate-200/70 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 border border-slate-300 dark:border-zinc-700 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
               title="Đóng module Tổng quan"
             >
               <XIcon size={13} animateOnHover />
@@ -126,7 +126,7 @@ export function MarketOverviewWidget({
       </div>
 
       {/* 2. Top Navigation Bar (Tabs & Exchange Pills) */}
-      <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-slate-100/90 dark:bg-zinc-900/80 text-slate-800 dark:text-zinc-200 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 gap-2">
+      <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border-b border-slate-200 dark:border-zinc-800 shrink-0 gap-2">
         {/* Main Tabs on left */}
         <div className="flex items-center gap-1 text-xs">
           <button
@@ -135,7 +135,7 @@ export function MarketOverviewWidget({
             className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
               mainTab === "bien_dong"
                 ? "bg-emerald-600 text-white font-bold shadow-xs"
-                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800"
             }`}
           >
             Biến động
@@ -147,7 +147,7 @@ export function MarketOverviewWidget({
             className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
               mainTab === "nuoc_ngoai"
                 ? "bg-emerald-600 text-white font-bold shadow-xs"
-                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800"
             }`}
           >
             Nước ngoài
@@ -159,7 +159,7 @@ export function MarketOverviewWidget({
             className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
               mainTab === "tu_doanh"
                 ? "bg-emerald-600 text-white font-bold shadow-xs"
-                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800"
             }`}
           >
             Tự doanh
@@ -171,7 +171,7 @@ export function MarketOverviewWidget({
             className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
               mainTab === "thanh_khoan"
                 ? "bg-emerald-600 text-white font-bold shadow-xs"
-                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-zinc-800"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800"
             }`}
           >
             Thanh khoản
@@ -183,10 +183,10 @@ export function MarketOverviewWidget({
           <button
             type="button"
             onClick={() => setExchange("HSX")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
               exchange === "HSX"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
             }`}
           >
             HSX
@@ -194,10 +194,10 @@ export function MarketOverviewWidget({
           <button
             type="button"
             onClick={() => setExchange("HNX")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
               exchange === "HNX"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
             }`}
           >
             HNX
@@ -205,10 +205,10 @@ export function MarketOverviewWidget({
           <button
             type="button"
             onClick={() => setExchange("UPCOM")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
               exchange === "UPCOM"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
             }`}
           >
             UPCOM
@@ -216,10 +216,10 @@ export function MarketOverviewWidget({
           <button
             type="button"
             onClick={() => setExchange("ALL")}
-            className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition-colors cursor-pointer ${
               exchange === "ALL"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-200/80 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-zinc-700"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700"
             }`}
           >
             TẤT CẢ
@@ -268,7 +268,7 @@ export function MarketOverviewWidget({
           <p className="text-xs mb-2">{error}</p>
           <button
             onClick={fetchOverview}
-            className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-zinc-800 rounded-lg text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-200"
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 cursor-pointer"
           >
             <RefreshCwIcon size={12} animateOnHover />
             <span>Thử lại</span>
@@ -372,7 +372,7 @@ export function MarketOverviewWidget({
                     <div
                       key={sym}
                       onClick={() => onSelectSymbol?.(sym)}
-                      className="p-2 rounded bg-white dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 flex items-center justify-between cursor-pointer hover:border-emerald-500"
+                      className="p-2 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-between cursor-pointer hover:border-emerald-500"
                     >
                       <span className="font-bold font-mono text-xs">{sym}</span>
                       <span className="text-emerald-500 font-mono text-[11px] font-bold">+18.5 tỷ</span>

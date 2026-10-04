@@ -144,7 +144,7 @@ export function StockSearchBar({
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Tra cứu mã hoặc giá cổ phiếu"
-          className="w-full pl-8 pr-12 py-1.5 text-xs bg-slate-100 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 font-sans transition-all"
+          className="w-full pl-8 pr-12 py-1.5 text-xs bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 font-sans transition-all"
         />
         <span className="absolute right-2.5 text-[10px] font-mono text-slate-400 dark:text-zinc-500 border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 rounded-md hidden sm:inline pointer-events-none">
           /
@@ -153,7 +153,7 @@ export function StockSearchBar({
 
       {/* Dropdown Results */}
       {isOpen && (query.trim().length > 0 || results.length > 0) && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-[#171718] border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in duration-100">
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-[#171718] border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in duration-100">
           {isLoading && results.length === 0 ? (
             <div className="p-4 text-center text-xs text-slate-400 dark:text-zinc-500 font-mono animate-pulse">
               Đang tra cứu giá...
@@ -163,7 +163,7 @@ export function StockSearchBar({
               Không tìm thấy kết quả nào cho &quot;{query}&quot;. Bấm Enter để mở biểu đồ trực tiếp mã này.
             </div>
           ) : (
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/50">
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800">
               {results.map((item, idx) => {
                 const isSelected = idx === selectedIndex;
                 const isPositive = (item.changePct || 0) > 0;
@@ -175,8 +175,8 @@ export function StockSearchBar({
                     onClick={() => handleSelect(item.symbol)}
                     className={`flex items-center justify-between p-3 cursor-pointer text-xs transition-colors ${
                       isSelected
-                        ? "bg-slate-100 dark:bg-zinc-800/60"
-                        : "hover:bg-slate-50 dark:hover:bg-zinc-800/30"
+                        ? "bg-slate-100 dark:bg-zinc-800"
+                        : "hover:bg-slate-50 dark:hover:bg-zinc-800"
                     }`}
                   >
                     {/* Left: Symbol & Name */}
@@ -230,7 +230,7 @@ export function StockSearchBar({
                             setIsOpen(false);
                             setQuery("");
                           }}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium hover:bg-emerald-500/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold transition-colors shadow-xs cursor-pointer"
                           title="Hỏi AI phân tích mã này"
                         >
                           <SparklesIcon size={11} animateOnHover />
