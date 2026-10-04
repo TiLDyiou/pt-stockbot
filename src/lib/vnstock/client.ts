@@ -568,12 +568,51 @@ export async function getNews(ticker?: string, limit = 5): Promise<NewsItem[]> {
     cacheKey,
     async () => {
       const { news } = await import("vnstock-js");
-      const results = await withTimeout(news.search(query), getTimeoutMs(), `Tin tức ${query}`);
+      let results: any[] = [];
+
+      try {
+        const searchResults = await withTimeout(
+          news.search(query),
+          getTimeoutMs(),
+          `Tin tức ${query}`
+        );
+        if (Array.isArray(searchResults) && searchResults.length > 0) {
+          results = searchResults;
+        }
+      } catch {
+        // Fallback to byDate if search is unavailable
+      }
+
+      if (results.length === 0) {
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const dateResults = await withTimeout(
+            news.byDate(today),
+            getTimeoutMs(),
+            `Tin tức ngày ${today}`
+          );
+          if (Array.isArray(dateResults)) {
+            if (ticker) {
+              const matched = dateResults.filter(
+                (n: any) =>
+                  n.title?.toUpperCase().includes(query) ||
+                  n.summary?.toUpperCase().includes(query)
+              );
+              results = matched.length > 0 ? matched : dateResults;
+            } else {
+              results = dateResults;
+            }
+          }
+        } catch {
+          // ignore fallback error
+        }
+      }
+
       return (results || []).slice(0, limit).map((n: any) => ({
         title: n.title || "",
         source: n.source || "Tổng hợp",
-        date: n.publishDate || n.date || new Date().toISOString().slice(0, 10),
-        url: n.url,
+        date: n.publishedAt || n.publishDate || n.date || new Date().toISOString().slice(0, 10),
+        url: n.url || n.link || "",
       }));
     },
     600_000 // 10 minutes

@@ -94,7 +94,9 @@ export default function StockChartClient({
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const sma20SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const sma50SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const compareSeriesMapRef = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  const compareSeriesMapRef = useRef<Map<string, ISeriesApi<"Line">>>(
+    new Map(),
+  );
   const prevCloseMapRef = useRef<Map<string, number>>(new Map());
 
   const [timeframe, setTimeframe] = useState<Timeframe>("6M");
@@ -126,7 +128,13 @@ export default function StockChartClient({
   const [compareLoading, setCompareLoading] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [compareSuggestions, setCompareSuggestions] = useState<
-    { symbol: string; name: string; exchange: string; price?: number; changePct?: number }[]
+    {
+      symbol: string;
+      name: string;
+      exchange: string;
+      price?: number;
+      changePct?: number;
+    }[]
   >([]);
   const [isSearchingCompare, setIsSearchingCompare] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
@@ -177,7 +185,9 @@ export default function StockChartClient({
         const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
         if (res.ok) {
           const data = await res.json();
-          const items = (data.results || []).filter((item: any) => item.symbol !== symbol);
+          const items = (data.results || []).filter(
+            (item: any) => item.symbol !== symbol,
+          );
           setCompareSuggestions(items);
           setSelectedSuggestionIndex(0);
         }
@@ -251,7 +261,9 @@ export default function StockChartClient({
     const isDark = document.documentElement.classList.contains("dark");
     const bgColor = isDark ? "#171718" : "#ffffff";
     const textColor = isDark ? "#a1a1aa" : "#64748b";
-    const gridColor = isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)";
+    const gridColor = isDark
+      ? "rgba(255, 255, 255, 0.04)"
+      : "rgba(0, 0, 0, 0.04)";
 
     const initWidth = wrapper.clientWidth || container.clientWidth || 600;
     const initHeight = wrapper.clientHeight || container.clientHeight || 350;
@@ -332,9 +344,7 @@ export default function StockChartClient({
         const prevClose = prevCloseMapRef.current.get(timeKey);
         const refPrice = prevClose !== undefined ? prevClose : candleData.open;
         const changePct =
-          refPrice > 0
-            ? ((candleData.close - refPrice) / refPrice) * 100
-            : 0;
+          refPrice > 0 ? ((candleData.close - refPrice) / refPrice) * 100 : 0;
 
         setHoveredData({
           time: timeKey,
@@ -375,7 +385,9 @@ export default function StockChartClient({
       const isDarkNow = document.documentElement.classList.contains("dark");
       const currentBg = isDarkNow ? "#171718" : "#ffffff";
       const currentText = isDarkNow ? "#a1a1aa" : "#64748b";
-      const currentGrid = isDarkNow ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)";
+      const currentGrid = isDarkNow
+        ? "rgba(255, 255, 255, 0.04)"
+        : "rgba(0, 0, 0, 0.04)";
       const currentBorder = isDarkNow ? "#27272a" : "#e2e8f0";
 
       chart.applyOptions({
@@ -447,7 +459,7 @@ export default function StockChartClient({
           high: c.high,
           low: c.low,
           close: c.close,
-        }))
+        })),
       );
     }
 
@@ -456,8 +468,11 @@ export default function StockChartClient({
         candles.map((c) => ({
           time: c.time as any,
           value: c.volume,
-          color: c.close >= c.open ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)",
-        }))
+          color:
+            c.close >= c.open
+              ? "rgba(16, 185, 129, 0.4)"
+              : "rgba(239, 68, 68, 0.4)",
+        })),
       );
     }
 
@@ -465,7 +480,7 @@ export default function StockChartClient({
       if (showSma20) {
         const smaData = calculateSMA(candles, 20);
         sma20SeriesRef.current.setData(
-          smaData.map((d) => ({ time: d.time as any, value: d.value }))
+          smaData.map((d) => ({ time: d.time as any, value: d.value })),
         );
       } else {
         sma20SeriesRef.current.setData([]);
@@ -476,7 +491,7 @@ export default function StockChartClient({
       if (showSma50) {
         const smaData = calculateSMA(candles, 50);
         sma50SeriesRef.current.setData(
-          smaData.map((d) => ({ time: d.time as any, value: d.value }))
+          smaData.map((d) => ({ time: d.time as any, value: d.value })),
         );
       } else {
         sma50SeriesRef.current.setData([]);
@@ -488,7 +503,10 @@ export default function StockChartClient({
     }
   }, [candles, showSma20, showSma50]);
 
-  const handleAddComparison = async (e?: React.FormEvent, overrideSymbol?: string) => {
+  const handleAddComparison = async (
+    e?: React.FormEvent,
+    overrideSymbol?: string,
+  ) => {
     if (e) e.preventDefault();
     const sym = (overrideSymbol || compareSymbol).trim().toUpperCase();
     if (!sym || sym === symbol) return;
@@ -529,7 +547,7 @@ export default function StockChartClient({
         });
 
         series.setData(
-          normData.map((d) => ({ time: d.time as any, value: d.value }))
+          normData.map((d) => ({ time: d.time as any, value: d.value })),
         );
 
         compareSeriesMapRef.current.set(sym, series);
@@ -558,7 +576,6 @@ export default function StockChartClient({
     setActiveComparisons((prev) => prev.filter((c) => c.symbol !== sym));
   };
 
-
   // Re-synchronize all active comparison series when timeframe changes
   useEffect(() => {
     if (activeComparisons.length === 0 || !chartInstanceRef.current) return;
@@ -568,7 +585,9 @@ export default function StockChartClient({
       const days = TIMEFRAME_DAYS[timeframe] || defaultDays;
       for (const comp of activeComparisons) {
         try {
-          const res = await fetch(`/api/candles?symbol=${comp.symbol}&days=${days}`);
+          const res = await fetch(
+            `/api/candles?symbol=${comp.symbol}&days=${days}`,
+          );
           if (!res.ok) continue;
           const data = await res.json();
           const compCandles = data.candles as CandleItem[];
@@ -577,7 +596,9 @@ export default function StockChartClient({
           const normData = calculateNormalizedPercentage(compCandles);
           const series = compareSeriesMapRef.current.get(comp.symbol);
           if (series && !isCancelled) {
-            series.setData(normData.map((d) => ({ time: d.time as any, value: d.value })));
+            series.setData(
+              normData.map((d) => ({ time: d.time as any, value: d.value })),
+            );
           }
         } catch {
           // Skip individual comparison fetch failure
@@ -621,7 +642,12 @@ export default function StockChartClient({
       e.dataTransfer.getData("application/x-stock-ticker") ||
       e.dataTransfer.getData("text/plain");
     const cleanSym = droppedSymbol.trim().toUpperCase();
-    if (cleanSym && cleanSym !== symbol && cleanSym.length >= 3 && cleanSym.length <= 10) {
+    if (
+      cleanSym &&
+      cleanSym !== symbol &&
+      cleanSym.length >= 3 &&
+      cleanSym.length <= 10
+    ) {
       handleAddComparison(undefined, cleanSym);
     }
   };
@@ -644,10 +670,14 @@ export default function StockChartClient({
       setCompareSuggestions([]);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedSuggestionIndex((prev) => (prev + 1) % (activeList.length || 1));
+      setSelectedSuggestionIndex(
+        (prev) => (prev + 1) % (activeList.length || 1),
+      );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedSuggestionIndex((prev) => (prev - 1 + activeList.length) % (activeList.length || 1));
+      setSelectedSuggestionIndex(
+        (prev) => (prev - 1 + activeList.length) % (activeList.length || 1),
+      );
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (activeList[selectedSuggestionIndex]) {
@@ -660,21 +690,29 @@ export default function StockChartClient({
 
   const latestCandle = candles[candles.length - 1];
   const prevCandle = candles.length > 1 ? candles[candles.length - 2] : null;
-  const refPrice = prevCandle ? prevCandle.close : (latestCandle ? latestCandle.open : 0);
+  const refPrice = prevCandle
+    ? prevCandle.close
+    : latestCandle
+      ? latestCandle.open
+      : 0;
   const latestChangePct =
     latestCandle && refPrice > 0
       ? ((latestCandle.close - refPrice) / refPrice) * 100
       : 0;
 
-  const displayData = hoveredData || (latestCandle ? {
-    time: latestCandle.time,
-    open: latestCandle.open,
-    high: latestCandle.high,
-    low: latestCandle.low,
-    close: latestCandle.close,
-    volume: latestCandle.volume,
-    changePct: latestChangePct,
-  } : null);
+  const displayData =
+    hoveredData ||
+    (latestCandle
+      ? {
+          time: latestCandle.time,
+          open: latestCandle.open,
+          high: latestCandle.high,
+          low: latestCandle.low,
+          close: latestCandle.close,
+          volume: latestCandle.volume,
+          changePct: latestChangePct,
+        }
+      : null);
 
   const change = displayData?.changePct || 0;
   const isPositive = change > 0;
@@ -774,7 +812,10 @@ export default function StockChartClient({
 
           {/* Merged + So sánh Button / Input */}
           {isComparing ? (
-            <div ref={compareContainerRef} className="relative flex items-center shrink-0 z-50">
+            <div
+              ref={compareContainerRef}
+              className="relative flex items-center shrink-0 z-50"
+            >
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -788,7 +829,6 @@ export default function StockChartClient({
                   <input
                     ref={compareInputRef}
                     type="text"
-                    placeholder="Nhập mã so sánh"
                     value={compareSymbol}
                     onChange={(e) => setCompareSymbol(e.target.value)}
                     onKeyDown={handleCompareKeyDown}
@@ -811,8 +851,12 @@ export default function StockChartClient({
                 className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#171718] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden"
               >
                 <div className="px-2.5 py-1.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/60 text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                  <span>{compareSymbol.trim() ? "Gợi ý mã" : "Mã phổ biến"}</span>
-                  {isSearchingCompare && <span className="animate-pulse">Đang tìm...</span>}
+                  <span>
+                    {compareSymbol.trim() ? "Gợi ý mã" : "Mã phổ biến"}
+                  </span>
+                  {isSearchingCompare && (
+                    <span className="animate-pulse">Đang tìm...</span>
+                  )}
                 </div>
 
                 <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/40">
@@ -825,8 +869,12 @@ export default function StockChartClient({
                     const isPositive = (item.changePct || 0) > 0;
                     const isNegative = (item.changePct || 0) < 0;
 
-                    const isAlreadyCompared = activeComparisons.some((c) => c.symbol === item.symbol);
-                    const comparedColor = activeComparisons.find((c) => c.symbol === item.symbol)?.color;
+                    const isAlreadyCompared = activeComparisons.some(
+                      (c) => c.symbol === item.symbol,
+                    );
+                    const comparedColor = activeComparisons.find(
+                      (c) => c.symbol === item.symbol,
+                    )?.color;
 
                     return (
                       <div
@@ -881,8 +929,8 @@ export default function StockChartClient({
                                 isPositive
                                   ? "text-emerald-500"
                                   : isNegative
-                                  ? "text-rose-500"
-                                  : "text-amber-500"
+                                    ? "text-rose-500"
+                                    : "text-amber-500"
                               }`}
                             >
                               {formatPercent(item.changePct)}
@@ -893,11 +941,14 @@ export default function StockChartClient({
                     );
                   })}
 
-                  {compareSymbol.trim() && !isSearchingCompare && compareSuggestions.length === 0 && (
-                    <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-zinc-500">
-                      Nhấn Enter để thử so sánh với &quot;{compareSymbol.trim().toUpperCase()}&quot;
-                    </div>
-                  )}
+                  {compareSymbol.trim() &&
+                    !isSearchingCompare &&
+                    compareSuggestions.length === 0 && (
+                      <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-zinc-500">
+                        Nhấn Enter để thử so sánh với &quot;
+                        {compareSymbol.trim().toUpperCase()}&quot;
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -929,8 +980,8 @@ export default function StockChartClient({
                   isPositive
                     ? "bg-emerald-500/10 text-emerald-500"
                     : isNegative
-                    ? "bg-rose-500/10 text-rose-500"
-                    : "bg-amber-500/10 text-amber-500"
+                      ? "bg-rose-500/10 text-rose-500"
+                      : "bg-amber-500/10 text-amber-500"
                 }`}
               >
                 {isPositive && <TrendingUpIcon size={13} animateOnHover />}
@@ -1021,30 +1072,66 @@ export default function StockChartClient({
       {displayData && (
         <div className="flex flex-wrap items-center justify-between gap-y-1 gap-x-3 mx-3 sm:mx-4 px-2.5 py-1 my-1 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60 text-[11px] font-mono text-slate-500 dark:text-zinc-400">
           <div className="flex flex-wrap items-center gap-3">
-            <span>Ngày: <strong className="text-slate-700 dark:text-zinc-200">{displayData.time}</strong></span>
-            <span>O: <strong className="text-slate-700 dark:text-zinc-200">{formatPrice(displayData.open)}</strong></span>
-            <span>H: <strong className="text-slate-700 dark:text-zinc-200">{formatPrice(displayData.high)}</strong></span>
-            <span>L: <strong className="text-slate-700 dark:text-zinc-200">{formatPrice(displayData.low)}</strong></span>
-            <span>C: <strong className="text-slate-700 dark:text-zinc-200">{formatPrice(displayData.close)}</strong></span>
+            <span>
+              Ngày:{" "}
+              <strong className="text-slate-700 dark:text-zinc-200">
+                {displayData.time}
+              </strong>
+            </span>
+            <span>
+              O:{" "}
+              <strong className="text-slate-700 dark:text-zinc-200">
+                {formatPrice(displayData.open)}
+              </strong>
+            </span>
+            <span>
+              H:{" "}
+              <strong className="text-slate-700 dark:text-zinc-200">
+                {formatPrice(displayData.high)}
+              </strong>
+            </span>
+            <span>
+              L:{" "}
+              <strong className="text-slate-700 dark:text-zinc-200">
+                {formatPrice(displayData.low)}
+              </strong>
+            </span>
+            <span>
+              C:{" "}
+              <strong className="text-slate-700 dark:text-zinc-200">
+                {formatPrice(displayData.close)}
+              </strong>
+            </span>
           </div>
 
-          {ratios && (ratios.pe != null || ratios.pb != null || ratios.ps != null) && (
-            <div className="flex items-center gap-2.5">
-              <span className="hidden md:inline text-slate-300 dark:text-zinc-700">|</span>
-              <span title="Chỉ số P/E: Giá / Lợi nhuận mỗi CP">
-                P/E: <strong className="text-slate-800 dark:text-zinc-100">{ratios.pe != null ? ratios.pe.toFixed(2) : "—"}</strong>
-              </span>
-              <span title="Chỉ số P/B: Giá / Giá trị sổ sách">
-                P/B: <strong className="text-slate-800 dark:text-zinc-100">{ratios.pb != null ? ratios.pb.toFixed(2) : "—"}</strong>
-              </span>
-              <span title="Chỉ số P/S: Giá / Doanh thu">
-                P/S: <strong className="text-slate-800 dark:text-zinc-100">{ratios.ps != null ? ratios.ps.toFixed(2) : "—"}</strong>
-              </span>
-            </div>
-          )}
+          {ratios &&
+            (ratios.pe != null || ratios.pb != null || ratios.ps != null) && (
+              <div className="flex items-center gap-2.5">
+                <span className="hidden md:inline text-slate-300 dark:text-zinc-700">
+                  |
+                </span>
+                <span title="Chỉ số P/E: Giá / Lợi nhuận mỗi CP">
+                  P/E:{" "}
+                  <strong className="text-slate-800 dark:text-zinc-100">
+                    {ratios.pe != null ? ratios.pe.toFixed(2) : "—"}
+                  </strong>
+                </span>
+                <span title="Chỉ số P/B: Giá / Giá trị sổ sách">
+                  P/B:{" "}
+                  <strong className="text-slate-800 dark:text-zinc-100">
+                    {ratios.pb != null ? ratios.pb.toFixed(2) : "—"}
+                  </strong>
+                </span>
+                <span title="Chỉ số P/S: Giá / Doanh thu">
+                  P/S:{" "}
+                  <strong className="text-slate-800 dark:text-zinc-100">
+                    {ratios.ps != null ? ratios.ps.toFixed(2) : "—"}
+                  </strong>
+                </span>
+              </div>
+            )}
         </div>
       )}
-
 
       {/* Chart Canvas: Guaranteed min-height and auto-resize with panel */}
       <div
@@ -1082,7 +1169,10 @@ export default function StockChartClient({
             </button>
           </div>
         )}
-        <div ref={chartContainerRef} className="absolute inset-0 w-full h-full" />
+        <div
+          ref={chartContainerRef}
+          className="absolute inset-0 w-full h-full"
+        />
       </div>
     </div>
   );

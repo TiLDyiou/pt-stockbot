@@ -55,8 +55,14 @@ function SortableItem({
   onSelect: (sym: string) => void;
   onRemove: (sym: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: symbol });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: symbol });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -100,7 +106,10 @@ function SortableItem({
       </div>
 
       {/* Sparkline (30 days) */}
-      <div className="hidden sm:flex items-center justify-center px-2" title="Xu hướng giá 30 phiên gần nhất">
+      <div
+        className="hidden sm:flex items-center justify-center px-2"
+        title="Xu hướng giá 30 phiên gần nhất"
+      >
         <SparklineSvg data={sparkline || []} width={85} height={22} />
       </div>
 
@@ -116,8 +125,8 @@ function SortableItem({
                 isPositive
                   ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
                   : isNegative
-                  ? "bg-rose-500/10 text-rose-500 dark:text-rose-400"
-                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    ? "bg-rose-500/10 text-rose-500 dark:text-rose-400"
+                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
               }`}
             >
               {isPositive && <TrendingUpIcon size={11} animateOnHover />}
@@ -153,13 +162,17 @@ export function WatchlistWidget({
 }: WatchlistWidgetProps) {
   const [tickers, setTickers] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Record<string, TickerQuote>>({});
-  const [sparklines, setSparklines] = useState<Record<string, { date: string; close: number }[]>>({});
+  const [sparklines, setSparklines] = useState<
+    Record<string, { date: string; close: number }[]>
+  >({});
   const [newTicker, setNewTicker] = useState("");
   const [isMounted, setIsMounted] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   useEffect(() => {
@@ -172,7 +185,9 @@ export function WatchlistWidget({
     if (currentTickers.length === 0) return;
 
     try {
-      const res = await fetch(`/api/sparkline?symbols=${currentTickers.join(",")}`);
+      const res = await fetch(
+        `/api/sparkline?symbols=${currentTickers.join(",")}`,
+      );
       if (res.ok) {
         const json = await res.json();
         setSparklines(json.sparklines || {});
@@ -259,7 +274,11 @@ export function WatchlistWidget({
         <div className="flex items-center gap-2.5 shrink-0">
           {dragHandle}
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-            <BookmarkIcon size={16} className="text-emerald-500" animateOnHover />
+            <BookmarkIcon
+              size={16}
+              className="text-emerald-500"
+              animateOnHover
+            />
           </div>
           <div>
             <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
@@ -273,7 +292,10 @@ export function WatchlistWidget({
 
         {/* Right Actions: Quick Add Form & Close Button */}
         <div className="flex items-center gap-2 ml-auto">
-          <form onSubmit={handleAddTicker} className="flex items-center gap-1.5">
+          <form
+            onSubmit={handleAddTicker}
+            className="flex items-center gap-1.5"
+          >
             <input
               type="text"
               placeholder="+ Thêm mã cổ phiếu"
@@ -287,7 +309,6 @@ export function WatchlistWidget({
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs disabled:opacity-40 transition-colors shadow-xs cursor-pointer shrink-0"
             >
               <PlusIcon size={12} animateOnHover />
-              <span>Thêm</span>
             </button>
           </form>
 
@@ -326,7 +347,10 @@ export function WatchlistWidget({
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={tickers} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={tickers}
+              strategy={verticalListSortingStrategy}
+            >
               {tickers.map((sym) => (
                 <SortableItem
                   key={sym}
