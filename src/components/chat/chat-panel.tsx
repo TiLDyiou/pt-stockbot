@@ -77,6 +77,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
+  const lastDropTimeRef = useRef(0);
 
   // Automatically adjust textarea height whenever input changes
   useEffect(() => {
@@ -136,8 +137,16 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     dragCounterRef.current = 0;
     setIsDraggingOver(false);
+
+    // Guard against stutter drops / duplicate bubbling within 250ms
+    const now = Date.now();
+    if (now - lastDropTimeRef.current < 250) {
+      return;
+    }
+    lastDropTimeRef.current = now;
 
     // 1. Check for module drops
     const moduleType =
@@ -163,13 +172,16 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
         return;
       }
 
-      const watchlistText = tickers.join("\n");
+      const watchlistLines = tickers
+        .map((t) => `Phân tích xu hướng của ${t}`)
+        .join("\n");
+
       setInput((prev) => {
         const trimmed = prev.trim();
         if (!trimmed) {
-          return watchlistText;
+          return watchlistLines;
         }
-        return `${prev.trimEnd()}\n${watchlistText}`;
+        return `${prev.trimEnd()}\n${watchlistLines}`;
       });
 
       setTimeout(() => {
@@ -206,11 +218,13 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
           : watchlist;
 
       if (tickers && tickers.length > 0) {
-        const watchlistText = tickers.join("\n");
+        const watchlistLines = tickers
+          .map((t) => `Phân tích xu hướng của ${t}`)
+          .join("\n");
         setInput((prev) => {
           const trimmed = prev.trim();
-          if (!trimmed) return watchlistText;
-          return `${prev.trimEnd()}\n${watchlistText}`;
+          if (!trimmed) return watchlistLines;
+          return `${prev.trimEnd()}\n${watchlistLines}`;
         });
         setTimeout(() => {
           if (textareaRef.current) {
@@ -233,12 +247,17 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       .replace(/[^A-Z0-9]/g, "");
 
     if (ticker.length >= 2 && ticker.length <= 10) {
+      const promptText = `Phân tích xu hướng của ${ticker}`;
       setInput((prev) => {
         const trimmed = prev.trim();
         if (!trimmed) {
-          return ticker;
+          return promptText;
         }
-        return `${prev.trimEnd()}\n${ticker}`;
+        const lines = prev.split("\n").map((l) => l.trim());
+        if (lines.includes(promptText)) {
+          return prev;
+        }
+        return `${prev.trimEnd()}\n${promptText}`;
       });
 
       setTimeout(() => {
@@ -460,7 +479,7 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
           >
             {isDraggingOver && (
               <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-950/90 backdrop-blur-xs border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-semibold animate-pulse pointer-events-none">
-                <span>Thả mã hoặc module Danh mục vào đây (tự động xuống dòng)</span>
+                <span>Thả mã hoặc module Danh mục để phân tích xu hướng (tự động xuống dòng)</span>
               </div>
             )}
             <div className="w-full max-h-[180px] overflow-y-auto">
