@@ -7,11 +7,9 @@ import { ChatMessageItem } from "./chat-message-item";
 import { loadWatchlist, STORAGE_KEYS } from "@/lib/storage/layout-storage";
 import {
   DeleteIcon,
-  BotMessageSquareIcon,
   ArrowRightIcon,
   SendIcon,
   BanIcon,
-  BotIcon,
 } from "lucide-animated";
 import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
 import { cn } from "@/lib/utils/cn";
@@ -381,11 +379,14 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 border border-emerald-500/20">
-              <BotMessageSquareIcon
-                size={24}
-                className="text-emerald-500"
-                animateOnHover
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 border border-emerald-500/20 p-2">
+              <img
+                src="/candlestick.svg"
+                alt="PhuocThinh AI"
+                width={28}
+                height={28}
+                style={{ width: 28, height: 28 }}
+                className="w-7 h-7 object-contain"
               />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
@@ -428,10 +429,17 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
               <div className="flex flex-col mb-3.5 items-start">
                 <div className="flex items-center mb-1.5 px-0.5 justify-start">
                   <span
-                    className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)]"
+                    className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)] p-0.5 overflow-hidden"
                     title="PhuocThinh AI"
                   >
-                    <BotIcon size={12} animateOnHover />
+                    <img
+                      src="/candlestick.svg"
+                      alt="PhuocThinh AI"
+                      width={14}
+                      height={14}
+                      style={{ width: 14, height: 14 }}
+                      className="w-3.5 h-3.5 object-contain"
+                    />
                   </span>
                 </div>
                 <div className="w-full max-w-[92%] md:max-w-[88%] mb-2 px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-zinc-900/90 border border-emerald-500/30 dark:border-emerald-500/30 shadow-xs">

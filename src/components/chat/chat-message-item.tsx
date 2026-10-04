@@ -6,7 +6,6 @@ import remarkGfm from "remark-gfm";
 import type { Message } from "ai";
 import {
   TrendingUpIcon,
-  BotIcon,
   UserIcon,
 } from "lucide-animated";
 import ThoughtLine from "./thought-line";
@@ -117,10 +116,17 @@ export function ChatMessageItem({
           </span>
         ) : (
           <span
-            className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)]"
+            className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.35)] dark:shadow-[0_0_12px_rgba(16,185,129,0.45)] p-0.5 overflow-hidden"
             title="PhuocThinh AI"
           >
-            <BotIcon size={12} animateOnHover />
+            <img
+              src="/candlestick.svg"
+              alt="PhuocThinh AI"
+              width={14}
+              height={14}
+              style={{ width: 14, height: 14 }}
+              className="w-3.5 h-3.5 object-contain"
+            />
           </span>
         )}
       </div>
