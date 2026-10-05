@@ -46,6 +46,8 @@ export function ChatMessageItem({
         return `Tính toán chỉ báo RSI, MACD ${args?.ticker || ""}`;
       case "get_fundamentals":
         return `Đọc báo cáo tài chính ${args?.ticker || ""}`;
+      case "get_ratios":
+        return `Phân tích chỉ số định giá ${args?.ticker || ""}`;
       case "get_market_overview":
         return `Truy vấn dữ liệu thị trường`;
       case "compare_symbols":
@@ -55,7 +57,7 @@ export function ChatMessageItem({
       case "get_news":
         return `Cập nhật tin tức`;
       default:
-        return `Thực hiện ${toolName}`;
+        return `Xử lý dữ liệu phân tích`;
     }
   };
 
