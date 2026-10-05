@@ -601,45 +601,26 @@ export function WatchlistWidget({
               </button>
             </form>
 
-            {/* Bảng gợi ý tìm kiếm (Search suggestions dropdown table) */}
+            {/* Bảng gợi ý tìm kiếm (Search suggestions dropdown) */}
             {isSuggestionsOpen && newTicker.trim().length > 0 && (
-              <div className="absolute right-0 top-full mt-1.5 w-80 sm:w-[440px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-700/80 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in duration-100">
-                {/* Header bar */}
-                <div className="px-3 py-1.5 bg-slate-50 dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-zinc-500">
-                  <span className="font-semibold text-slate-600 dark:text-zinc-300">
-                    BẢNG GỢI Ý MÃ CỔ PHIẾU
-                  </span>
-                  <span className="text-[9px] hidden sm:inline text-slate-400">
-                    ↑↓ chọn • ↵ thêm
-                  </span>
-                </div>
-
+              <div className="absolute right-0 top-full mt-1.5 w-64 sm:w-72 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-700/80 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in duration-100">
                 {isLoadingSearch && searchResults.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
+                  <div className="p-3 text-center text-xs text-slate-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
                     <Loader2 size={13} className="animate-spin text-emerald-500" />
                     <span>Đang tìm kiếm mã...</span>
                   </div>
                 ) : searchResults.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-500 dark:text-zinc-400">
-                    Không tìm thấy mã phù hợp cho &quot;{newTicker}&quot;.
+                  <div className="p-3 text-center text-xs text-slate-500 dark:text-zinc-400">
+                    Không tìm thấy mã &quot;{newTicker}&quot;.
                     {newTicker.trim().length >= 3 && (
-                      <div className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
-                        Bấm Enter hoặc nút + để thêm trực tiếp mã &quot;{newTicker.trim().toUpperCase()}&quot;
+                      <div className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
+                        Bấm Enter hoặc nút + để thêm &quot;{newTicker.trim().toUpperCase()}&quot;
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="max-h-64 sm:max-h-72 overflow-y-auto">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-100/80 dark:bg-zinc-800/80 text-[10px] font-mono text-slate-500 dark:text-zinc-400 border-b border-slate-200/60 dark:border-zinc-700/60 sticky top-0 z-10 backdrop-blur-xs">
-                        <tr>
-                          <th className="py-1.5 pl-3 pr-2 font-medium">Mã</th>
-                          <th className="py-1.5 px-2 font-medium">Tên doanh nghiệp</th>
-                          <th className="py-1.5 px-2 text-right font-medium">Giá</th>
-                          <th className="py-1.5 px-2 text-right font-medium">+/-</th>
-                          <th className="py-1.5 pl-2 pr-3 text-center font-medium w-16">Thao tác</th>
-                        </tr>
-                      </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                         {searchResults.map((item, idx) => {
                           const isSelected = idx === selectedSuggestionIndex;
@@ -650,6 +631,7 @@ export function WatchlistWidget({
                           return (
                             <tr
                               key={item.symbol}
+                              title={item.name}
                               onClick={() => {
                                 if (!isAdded) {
                                   handleAddSymbol(item.symbol, {
@@ -665,7 +647,7 @@ export function WatchlistWidget({
                               } ${isAdded ? "opacity-60" : ""}`}
                             >
                               {/* Mã & Sàn */}
-                              <td className="py-2 pl-3 pr-2 whitespace-nowrap">
+                              <td className="py-2 pl-3 pr-1.5 whitespace-nowrap">
                                 <div className="flex items-center gap-1.5 font-mono">
                                   <span className="font-bold text-slate-900 dark:text-white text-xs tracking-wider">
                                     {item.symbol}
@@ -676,23 +658,13 @@ export function WatchlistWidget({
                                 </div>
                               </td>
 
-                              {/* Tên công ty */}
-                              <td className="py-2 px-2 max-w-[130px] sm:max-w-[170px]">
-                                <div
-                                  className="text-[11px] text-slate-600 dark:text-zinc-300 truncate"
-                                  title={item.name}
-                                >
-                                  {item.name}
-                                </div>
-                              </td>
-
                               {/* Giá */}
-                              <td className="py-2 px-2 text-right font-mono text-[11px] font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                              <td className="py-2 px-1.5 text-right font-mono text-[11px] font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                                 {item.price !== undefined ? formatPrice(item.price) : "—"}
                               </td>
 
                               {/* +/- (%) */}
-                              <td className="py-2 px-2 text-right font-mono text-[10px] font-bold whitespace-nowrap">
+                              <td className="py-2 px-1.5 text-right font-mono text-[10px] font-bold whitespace-nowrap">
                                 {item.changePct !== undefined ? (
                                   <span
                                     className={`inline-flex items-center gap-0.5 ${
@@ -713,11 +685,11 @@ export function WatchlistWidget({
                               </td>
 
                               {/* Thao tác */}
-                              <td className="py-2 pl-2 pr-3 text-center whitespace-nowrap">
+                              <td className="py-2 pl-1.5 pr-3 text-center whitespace-nowrap">
                                 {isAdded ? (
                                   <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
                                     <CheckIcon size={11} className="text-emerald-500" />
-                                    <span className="hidden sm:inline">Đã thêm</span>
+                                    <span>Đã có</span>
                                   </span>
                                 ) : (
                                   <button

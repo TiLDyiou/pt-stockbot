@@ -172,25 +172,21 @@ export function StockSearchBar({
                 return (
                   <div
                     key={item.symbol}
+                    title={item.name}
                     onClick={() => handleSelect(item.symbol)}
-                    className={`flex items-center justify-between p-3 cursor-pointer text-xs transition-colors ${
+                    className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
                       isSelected
                         ? "bg-slate-100 dark:bg-zinc-800"
                         : "hover:bg-slate-50 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    {/* Left: Symbol & Name */}
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold font-mono text-slate-900 dark:text-white text-xs tracking-wider">
-                          {item.symbol}
-                        </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
-                          {item.exchange}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-xs">
-                        {item.name}
+                    {/* Left: Symbol & Exchange */}
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold font-mono text-slate-900 dark:text-white text-xs tracking-wider">
+                        {item.symbol}
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                        {item.exchange}
                       </span>
                     </div>
 
