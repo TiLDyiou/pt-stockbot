@@ -97,8 +97,8 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
   });
 
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 36,
-    maxHeight: 180,
+    minHeight: 72,
+    maxHeight: 240,
   });
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
@@ -546,7 +546,7 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                 </div>
               )}
               {/* Bottom Left: Toggle Web / News Search */}
-              <div className="absolute left-2 bottom-1.5 flex items-center z-10">
+              <div className="absolute left-2.5 bottom-2 flex items-center z-10">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -569,7 +569,7 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                 </button>
               </div>
 
-              <div className="w-full max-h-[180px] overflow-y-auto">
+              <div className="w-full max-h-[240px] overflow-y-auto">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -587,13 +587,13 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                       }
                     }
                   }}
-                  rows={1}
+                  rows={2}
                   placeholder="Hỏi AI về cổ phiếu hoặc thị trường"
-                  className="w-full resize-none border-none bg-transparent pl-10 pr-10 py-2.5 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
+                  className="w-full resize-none border-none bg-transparent px-3.5 pt-2.5 pb-9 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
                 />
               </div>
 
-              <div className="absolute right-2 bottom-1.5 flex items-center gap-1.5">
+              <div className="absolute right-2.5 bottom-2 flex items-center gap-1.5 z-10">
                 {isLoading ? (
                   <button
                     type="button"
