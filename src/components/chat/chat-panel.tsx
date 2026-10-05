@@ -561,8 +561,8 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                   )}
                   title={
                     enableNews
-                      ? "Đang bật: Cho phép AI tra cứu tin tức trên mạng (Nhấp để tắt)"
-                      : "Đang tắt: Không tra cứu tin tức trên mạng (Nhấp để bật)"
+                      ? "Đang bật: Cho phép AI tra cứu tin tức trên mạng"
+                      : "Đang tắt: Không tra cứu tin tức trên mạng"
                   }
                 >
                   <Globe size={14} className={enableNews ? "text-white" : "text-cyan-600 dark:text-cyan-400"} />
