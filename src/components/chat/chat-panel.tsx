@@ -554,10 +554,10 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                     toggleEnableNews();
                   }}
                   className={cn(
-                    "flex items-center justify-center h-7 w-7 rounded-xl transition-all cursor-pointer active:scale-95 shrink-0",
+                    "flex items-center justify-center h-7 w-7 rounded-xl transition-all cursor-pointer active:scale-95 shrink-0 border",
                     enableNews
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
-                      : "text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                      ? "bg-cyan-500 hover:bg-cyan-400 text-white border-cyan-500 shadow-xs"
+                      : "bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-cyan-600 dark:text-cyan-400 border-slate-200 dark:border-zinc-700"
                   )}
                   title={
                     enableNews
@@ -565,7 +565,7 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                       : "Đang tắt: Không tra cứu tin tức trên mạng (Nhấp để bật)"
                   }
                 >
-                  <Globe size={14} className={enableNews ? "text-white" : ""} />
+                  <Globe size={14} className={enableNews ? "text-white" : "text-cyan-600 dark:text-cyan-400"} />
                 </button>
               </div>
 
