@@ -272,8 +272,8 @@ export function WorkspaceLayout() {
             <button
               type="button"
               onClick={handleClearChat}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors cursor-pointer"
-              title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white hover:border-rose-600 dark:hover:bg-rose-600 dark:hover:text-white dark:hover:border-rose-600 rounded-md transition-colors cursor-pointer"
+              title="Xóa toàn bộ lịch sử trò chuyện"
             >
               <Trash2 size={11} />
               <span className="hidden lg:inline">Xóa chat</span>
