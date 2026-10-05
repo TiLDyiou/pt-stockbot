@@ -19,12 +19,11 @@ import {
   MoonIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
-  LayoutGridIcon,
   CheckIcon,
   PlusIcon,
-  RefreshCcwIcon,
   GripVerticalIcon,
 } from "lucide-animated";
+import { Trash2 } from "lucide-react";
 import {
   loadModuleVisibility,
   saveModuleVisibility,
@@ -32,8 +31,6 @@ import {
   loadModuleOrder,
   saveModuleOrder,
   DEFAULT_MODULE_ORDER,
-  saveDashboardLayout,
-  DEFAULT_LAYOUT,
   type ModuleVisibility,
   type ModuleId,
 } from "@/lib/storage/layout-storage";
@@ -52,7 +49,12 @@ export function WorkspaceLayout() {
   const [moduleOrder, setModuleOrder] = useState<ModuleId[]>(DEFAULT_MODULE_ORDER);
   const [draggedModule, setDraggedModule] = useState<ModuleId | null>(null);
   const [dragOverModule, setDragOverModule] = useState<ModuleId | null>(null);
-  const [resetKey, setResetKey] = useState(0);
+  const [clearChatTrigger, setClearChatTrigger] = useState(0);
+
+  const handleClearChat = () => {
+    setClearChatTrigger((prev) => prev + 1);
+    window.dispatchEvent(new CustomEvent("app:clear-chat"));
+  };
 
   const toggleChatPanel = () => {
     const panel = chatPanelRef.current;
@@ -134,22 +136,6 @@ export function WorkspaceLayout() {
     });
   };
 
-  const handleResetLayout = () => {
-    saveDashboardLayout(DEFAULT_LAYOUT);
-    saveModuleVisibility(DEFAULT_MODULE_VISIBILITY);
-    saveModuleOrder(DEFAULT_MODULE_ORDER);
-    try {
-      localStorage.removeItem("dashboard-vertical-panels-v1");
-      localStorage.removeItem("dashboard-bottom-panels-v1");
-      localStorage.removeItem("dashboard-vertical-panels-2-v1");
-    } catch {
-      // Ignore localStorage error if storage is unavailable
-    }
-    setModules(DEFAULT_MODULE_VISIBILITY);
-    setModuleOrder(DEFAULT_MODULE_ORDER);
-    setResetKey((prev) => prev + 1);
-  };
-
   const handleOpenChart = (ticker: string) => {
     setTargetChartTicker(ticker);
     handleSetModuleVisible("chart", true);
@@ -210,11 +196,6 @@ export function WorkspaceLayout() {
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Modules Toolbar (desktop/tablet) */}
           <div className="hidden md:flex items-center gap-1 sm:gap-1.5 font-mono text-[11px]">
-            <span className="text-slate-400 dark:text-zinc-500 font-medium hidden xl:inline-flex items-center gap-1 mr-0.5">
-              <LayoutGridIcon size={12} animateOnHover />
-              <span>Modules:</span>
-            </span>
-
             {moduleOrder.map((modId) => {
               const isVisible = modules[modId];
               const isDragTarget = dragOverModule === modId && draggedModule !== modId;
@@ -290,12 +271,12 @@ export function WorkspaceLayout() {
 
             <button
               type="button"
-              onClick={handleResetLayout}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors cursor-pointer"
-              title="Khôi phục bố cục và kích thước mặc định"
+              onClick={handleClearChat}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors cursor-pointer"
+              title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
             >
-              <RefreshCcwIcon size={11} animateOnHover />
-              <span className="hidden lg:inline">Đặt lại</span>
+              <Trash2 size={11} />
+              <span className="hidden lg:inline">Xóa chat</span>
             </button>
 
             <div className="h-4 w-px bg-slate-200 dark:bg-zinc-800 mx-1" />
@@ -350,10 +331,12 @@ export function WorkspaceLayout() {
         {isMobile ? (
           <div className="h-full w-full">
             {activeTab === "chat" ? (
-              <ChatPanel onOpenChart={handleOpenChart} />
+              <ChatPanel
+                onOpenChart={handleOpenChart}
+                clearChatTrigger={clearChatTrigger}
+              />
             ) : (
               <DashboardContainer
-                key={resetKey}
                 modules={modules}
                 moduleOrder={moduleOrder}
                 onSetModuleVisible={handleSetModuleVisible}
@@ -382,7 +365,10 @@ export function WorkspaceLayout() {
               onExpand={() => setIsChatCollapsed(false)}
               className="h-full flex flex-col min-h-0 overflow-hidden"
             >
-              <ChatPanel onOpenChart={handleOpenChart} />
+              <ChatPanel
+                onOpenChart={handleOpenChart}
+                clearChatTrigger={clearChatTrigger}
+              />
             </Panel>
 
             {/* Splitter */}
@@ -406,7 +392,6 @@ export function WorkspaceLayout() {
               className="h-full flex flex-col min-h-0 overflow-hidden"
             >
               <DashboardContainer
-                key={resetKey}
                 modules={modules}
                 moduleOrder={moduleOrder}
                 onSetModuleVisible={handleSetModuleVisible}

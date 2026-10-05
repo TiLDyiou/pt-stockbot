@@ -164,3 +164,29 @@ export const stockTools = {
     },
   }),
 };
+
+export function getStockTools(options: { enableNews?: boolean } = {}) {
+  const { enableNews = false } = options;
+
+  if (!enableNews) {
+    // Exclude get_news tool so LLM relies purely on quantitative and financial data
+    const { get_news: _, ...baseTools } = stockTools;
+    return baseTools;
+  }
+
+  // Include get_news tool with explicit override enabled
+  return {
+    ...stockTools,
+    get_news: tool({
+      description:
+        "Tra cứu tin tức báo chí, thị trường hoặc doanh nghiệp trên internet (nguồn tổng hợp bên thứ ba, tối đa 5 tin)",
+      parameters: z.object({
+        ticker: z.string().min(3).max(10).optional(),
+        limit: z.number().int().min(1).max(5).default(5),
+      }),
+      execute: async ({ ticker, limit }) => {
+        return safeExecute(() => getNews(ticker, limit, true));
+      },
+    }),
+  };
+}

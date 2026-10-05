@@ -616,8 +616,15 @@ export async function compareSymbolsList(tickers: string[]): Promise<CompareItem
 /**
  * Tra cứu tin tức doanh nghiệp
  */
-export async function getNews(ticker?: string, limit = 5): Promise<NewsItem[]> {
-  const isEnabled = process.env.ENABLE_NEWS === "true";
+export async function getNews(
+  ticker?: string,
+  limit = 5,
+  isEnabledOverride?: boolean
+): Promise<NewsItem[]> {
+  const isEnabled =
+    isEnabledOverride !== undefined
+      ? isEnabledOverride
+      : process.env.ENABLE_NEWS === "true";
   if (!isEnabled) {
     return [];
   }
@@ -654,12 +661,13 @@ export async function getNews(ticker?: string, limit = 5): Promise<NewsItem[]> {
           );
           if (Array.isArray(dateResults)) {
             if (ticker) {
+              // Only include news that actually mentions the ticker
               const matched = dateResults.filter(
                 (n: any) =>
                   n.title?.toUpperCase().includes(query) ||
                   n.summary?.toUpperCase().includes(query)
               );
-              results = matched.length > 0 ? matched : dateResults;
+              results = matched;
             } else {
               results = dateResults;
             }

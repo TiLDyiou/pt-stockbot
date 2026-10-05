@@ -1,7 +1,7 @@
 import { streamText } from "ai";
 import { getLanguageModel, getMaxOutputTokens } from "@/lib/ai/provider";
 import { sanitizeMessages } from "@/lib/ai/sanitize";
-import { stockTools } from "@/lib/ai/tools";
+import { getStockTools } from "@/lib/ai/tools";
 
 export const maxDuration = 300;
 
@@ -45,13 +45,14 @@ export async function POST(req: Request) {
   try {
     const json = await req.json();
     const cleanMessages = sanitizeMessages(json.messages);
+    const enableNews = Boolean(json.enableNews);
 
     const model = getLanguageModel();
     const result = streamText({
       model,
       system: SYSTEM_PROMPT,
       messages: cleanMessages,
-      tools: stockTools,
+      tools: getStockTools({ enableNews }),
       maxSteps: 10,
       maxTokens: getMaxOutputTokens(),
     });

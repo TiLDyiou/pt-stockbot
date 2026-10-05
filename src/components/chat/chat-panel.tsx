@@ -6,11 +6,11 @@ import type { Message } from "ai";
 import { ChatMessageItem } from "./chat-message-item";
 import { loadWatchlist, STORAGE_KEYS } from "@/lib/storage/layout-storage";
 import {
-  DeleteIcon,
   ArrowRightIcon,
   SendIcon,
   BanIcon,
 } from "lucide-animated";
+import { Globe } from "lucide-react";
 import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
 import { cn } from "@/lib/utils/cn";
 import ThoughtLine from "./thought-line";
@@ -19,6 +19,7 @@ import BorderGlow from "./BorderGlow";
 
 interface ChatPanelProps {
   onOpenChart?: (ticker: string) => void;
+  clearChatTrigger?: number;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -32,11 +33,33 @@ interface PersistedHistory {
   messages: Message[];
 }
 
-export function ChatPanel({ onOpenChart }: ChatPanelProps) {
+export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [isClientReady, setIsClientReady] = useState(false);
+  const [enableNews, setEnableNews] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("pt_enable_news") === "true";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  const toggleEnableNews = () => {
+    setEnableNews((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("pt_enable_news", String(next));
+      } catch (err) {
+        console.warn("Không thể lưu trạng thái tin tức:", err);
+      }
+      return next;
+    });
+  };
 
   const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
@@ -68,6 +91,9 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
   } = useChat({
     api: "/api/chat",
     maxSteps: 10,
+    body: {
+      enableNews,
+    },
   });
 
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -282,7 +308,11 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     if (e) e.preventDefault();
     if (!input.trim() || isLoading) return;
     isAtBottomRef.current = true;
-    handleSubmit(e);
+    handleSubmit(e, {
+      body: {
+        enableNews,
+      },
+    });
     adjustHeight(true);
     requestAnimationFrame(() => scrollToBottom(false));
   };
@@ -351,12 +381,35 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
     }
   };
 
+  useEffect(() => {
+    if (clearChatTrigger && clearChatTrigger > 0) {
+      handleClearHistory();
+    }
+  }, [clearChatTrigger]);
+
+  useEffect(() => {
+    const handleClearEvent = () => {
+      handleClearHistory();
+    };
+    window.addEventListener("app:clear-chat", handleClearEvent);
+    return () => {
+      window.removeEventListener("app:clear-chat", handleClearEvent);
+    };
+  }, [messages]);
+
   const handlePromptClick = (promptText: string) => {
     isAtBottomRef.current = true;
-    append({
-      role: "user",
-      content: promptText,
-    });
+    append(
+      {
+        role: "user",
+        content: promptText,
+      },
+      {
+        body: {
+          enableNews,
+        },
+      }
+    );
     requestAnimationFrame(() => scrollToBottom(false));
   };
 
@@ -492,6 +545,30 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   <span>Thả mã hoặc module Danh mục để phân tích xu hướng</span>
                 </div>
               )}
+              {/* Bottom Left: Toggle Web / News Search */}
+              <div className="absolute left-2 bottom-1.5 flex items-center z-10">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleEnableNews();
+                  }}
+                  className={cn(
+                    "flex items-center justify-center h-7 w-7 rounded-xl transition-all cursor-pointer active:scale-95 shrink-0",
+                    enableNews
+                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
+                      : "text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                  )}
+                  title={
+                    enableNews
+                      ? "Đang bật: Cho phép AI tra cứu tin tức trên mạng (Nhấp để tắt)"
+                      : "Đang tắt: Không tra cứu tin tức trên mạng (Nhấp để bật)"
+                  }
+                >
+                  <Globe size={14} className={enableNews ? "text-white" : ""} />
+                </button>
+              </div>
+
               <div className="w-full max-h-[180px] overflow-y-auto">
                 <textarea
                   ref={textareaRef}
@@ -512,20 +589,11 @@ export function ChatPanel({ onOpenChart }: ChatPanelProps) {
                   }}
                   rows={1}
                   placeholder="Hỏi AI về cổ phiếu hoặc thị trường"
-                  className="w-full resize-none border-none bg-transparent pl-4 pr-[76px] py-2.5 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
+                  className="w-full resize-none border-none bg-transparent pl-10 pr-10 py-2.5 text-xs sm:text-sm leading-5 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-0 text-slate-900 dark:text-white block"
                 />
               </div>
 
               <div className="absolute right-2 bottom-1.5 flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleClearHistory}
-                  className="flex items-center justify-center h-7 w-7 rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
-                  title="Xóa toàn bộ lịch sử trò chuyện (kèm cảnh báo)"
-                >
-                  <DeleteIcon size={13} animateOnHover />
-                </button>
-
                 {isLoading ? (
                   <button
                     type="button"
