@@ -9,8 +9,8 @@ import {
   ArrowRightIcon,
   SendIcon,
   BanIcon,
+  EarthIcon,
 } from "lucide-animated";
-import { Globe } from "lucide-react";
 import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
 import { cn } from "@/lib/utils/cn";
 import ThoughtLine from "./thought-line";
@@ -101,8 +101,17 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
     maxHeight: 240,
   });
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
   const dragCounterRef = useRef(0);
   const lastDropTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (isLoading) {
+      setGenerationStartTime((prev) => prev ?? Date.now());
+    } else {
+      setGenerationStartTime(null);
+    }
+  }, [isLoading]);
 
   // Automatically adjust textarea height whenever input changes
   useEffect(() => {
@@ -307,6 +316,7 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
   const onFormSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || isLoading) return;
+    setGenerationStartTime(Date.now());
     isAtBottomRef.current = true;
     handleSubmit(e, {
       body: {
@@ -398,6 +408,7 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
   }, [messages]);
 
   const handlePromptClick = (promptText: string) => {
+    setGenerationStartTime(Date.now());
     isAtBottomRef.current = true;
     append(
       {
@@ -484,12 +495,18 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                 watchlistTickers={watchlist}
                 onOpenChart={onOpenChart}
                 isStreaming={isLoading && index === messages.length - 1}
+                generationStartTime={
+                  isLoading && index === messages.length - 1
+                    ? generationStartTime || undefined
+                    : undefined
+                }
               />
             ))}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex flex-col mb-3.5 items-start">
                 <div className="w-full max-w-[92%] md:max-w-[88%] mb-2 px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-zinc-900/90 border border-emerald-500/30 dark:border-emerald-500/30 shadow-xs">
                   <ThoughtLine
+                    startTime={generationStartTime || undefined}
                     working={true}
                     steps={[
                       "Đang phân tích câu hỏi…",
@@ -565,7 +582,11 @@ export function ChatPanel({ onOpenChart, clearChatTrigger }: ChatPanelProps) {
                       : "Đang tắt: Không tra cứu tin tức trên mạng"
                   }
                 >
-                  <Globe size={14} className={enableNews ? "text-white" : "text-cyan-600 dark:text-cyan-400"} />
+                  <EarthIcon
+                    size={14}
+                    animateOnHover
+                    className={enableNews ? "text-white" : "text-cyan-600 dark:text-cyan-400"}
+                  />
                 </button>
               </div>
 

@@ -12,6 +12,7 @@ interface ChatMessageItemProps {
   watchlistTickers: string[];
   onOpenChart?: (ticker: string) => void;
   isStreaming?: boolean;
+  generationStartTime?: number;
 }
 
 export function ChatMessageItem({
@@ -19,6 +20,7 @@ export function ChatMessageItem({
   watchlistTickers,
   onOpenChart,
   isStreaming = false,
+  generationStartTime,
 }: ChatMessageItemProps) {
   const isUser = message.role === "user";
 
@@ -107,6 +109,7 @@ export function ChatMessageItem({
       {showThinkingCard && (
         <div className="w-full max-w-[92%] md:max-w-[88%] mb-2 px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-zinc-900/90 border border-emerald-500/30 dark:border-emerald-500/30 shadow-xs">
           <ThoughtLine
+            startTime={generationStartTime}
             working={true}
             steps={steps}
             label="Đang suy nghĩ…"

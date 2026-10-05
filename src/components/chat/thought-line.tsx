@@ -23,6 +23,7 @@ export interface ThoughtLineProps {
   working?: boolean;
   settleAfter?: number;
   elapsed?: number;
+  startTime?: number;
   showTimer?: boolean;
   onSettle?: (seconds: number) => void;
   className?: string;
@@ -42,6 +43,7 @@ export default function ThoughtLine({
   fontSize = 12,
   working = true,
   elapsed,
+  startTime,
   showTimer = true,
   onSettle,
   className = "",
@@ -49,8 +51,12 @@ export default function ThoughtLine({
 }: ThoughtLineProps) {
   const isWorking = Boolean(working);
   const [open, setOpen] = useState(isWorking ? true : !collapseOnSettle);
-  const [seconds, setSeconds] = useState<number>(elapsed || 0);
-  const startTimeRef = useRef<number | null>(null);
+  const [seconds, setSeconds] = useState<number>(() => {
+    if (elapsed != null && elapsed > 0) return elapsed;
+    if (startTime) return Math.max(0, (Date.now() - startTime) / 1000);
+    return 0;
+  });
+  const startTimeRef = useRef<number | null>(startTime || null);
   const latestSecondsRef = useRef<number>(seconds);
   latestSecondsRef.current = seconds;
 
@@ -59,6 +65,12 @@ export default function ThoughtLine({
       setSeconds(elapsed);
     }
   }, [elapsed]);
+
+  useEffect(() => {
+    if (startTime) {
+      startTimeRef.current = startTime;
+    }
+  }, [startTime]);
 
   // Expand when thinking starts, collapse when settled
   useEffect(() => {
@@ -75,23 +87,28 @@ export default function ThoughtLine({
   // Realtime stopwatch
   useEffect(() => {
     if (!isWorking) {
-      startTimeRef.current = null;
       return;
     }
 
-    if (!startTimeRef.current) {
+    if (startTime) {
+      startTimeRef.current = startTime;
+    } else if (!startTimeRef.current) {
       startTimeRef.current = Date.now();
     }
 
-    const interval = setInterval(() => {
-      if (startTimeRef.current) {
-        const diff = (Date.now() - startTimeRef.current) / 1000;
+    const updateTimer = () => {
+      const base = startTime || startTimeRef.current;
+      if (base) {
+        const diff = Math.max(0, (Date.now() - base) / 1000);
         setSeconds(diff);
       }
-    }, 100);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 100);
 
     return () => clearInterval(interval);
-  }, [isWorking]);
+  }, [isWorking, startTime]);
 
   const hasValidTimer = isWorking || seconds > 0 || (elapsed != null && elapsed > 0);
   const displaySeconds = elapsed != null && elapsed > 0 ? elapsed : seconds;
