@@ -515,7 +515,7 @@ export function WatchlistWidget({
   return (
     <div className="flex flex-col w-full h-full bg-white dark:bg-[#171718] relative">
       {/* Card Header */}
-      <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-slate-100 dark:border-zinc-800/60">
+      <div className="relative z-20 flex items-center justify-between gap-3 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-slate-100 dark:border-zinc-800/60">
         <div
           draggable
           onDragStart={(e) => {
@@ -547,7 +547,7 @@ export function WatchlistWidget({
 
         {/* Right Actions: Quick Add Form with Search Suggestions Table & Close Button */}
         <div className="flex items-center gap-2 ml-auto">
-          <div ref={searchContainerRef} className="relative">
+          <div ref={searchContainerRef} className="relative z-30">
             <form
               onSubmit={handleAddTicker}
               className="flex items-center gap-1.5"
@@ -603,7 +603,7 @@ export function WatchlistWidget({
 
             {/* Bảng gợi ý tìm kiếm (Search suggestions dropdown) */}
             {isSuggestionsOpen && newTicker.trim().length > 0 && (
-              <div className="absolute right-0 top-full mt-1.5 w-64 sm:w-72 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-700/80 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in duration-100">
+              <div className="absolute right-0 top-full mt-1.5 w-80 sm:w-[400px] md:w-[460px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-700/80 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in duration-100">
                 {isLoadingSearch && searchResults.length === 0 ? (
                   <div className="p-3 text-center text-xs text-slate-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
                     <Loader2 size={13} className="animate-spin text-emerald-500" />
@@ -647,24 +647,24 @@ export function WatchlistWidget({
                               } ${isAdded ? "opacity-60" : ""}`}
                             >
                               {/* Mã & Sàn */}
-                              <td className="py-2 pl-3 pr-1.5 whitespace-nowrap">
+                              <td className="py-2.5 pl-3.5 pr-2 whitespace-nowrap">
                                 <div className="flex items-center gap-1.5 font-mono">
                                   <span className="font-bold text-slate-900 dark:text-white text-xs tracking-wider">
                                     {item.symbol}
                                   </span>
-                                  <span className="text-[9px] px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 border border-slate-200/50 dark:border-zinc-700/50">
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 border border-slate-200/50 dark:border-zinc-700/50">
                                     {item.exchange}
                                   </span>
                                 </div>
                               </td>
 
                               {/* Giá */}
-                              <td className="py-2 px-1.5 text-right font-mono text-[11px] font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                              <td className="py-2.5 px-2.5 text-right font-mono text-[11px] font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                                 {item.price !== undefined ? formatPrice(item.price) : "—"}
                               </td>
 
                               {/* +/- (%) */}
-                              <td className="py-2 px-1.5 text-right font-mono text-[10px] font-bold whitespace-nowrap">
+                              <td className="py-2.5 px-2.5 text-right font-mono text-[11px] font-bold whitespace-nowrap">
                                 {item.changePct !== undefined ? (
                                   <span
                                     className={`inline-flex items-center gap-0.5 ${
@@ -675,8 +675,8 @@ export function WatchlistWidget({
                                         : "text-amber-500"
                                     }`}
                                   >
-                                    {isPositive && <TrendingUpIcon size={10} />}
-                                    {isNegative && <TrendingDownIcon size={10} />}
+                                    {isPositive && <TrendingUpIcon size={11} />}
+                                    {isNegative && <TrendingDownIcon size={11} />}
                                     <span>{formatPercent(item.changePct)}</span>
                                   </span>
                                 ) : (
@@ -685,10 +685,10 @@ export function WatchlistWidget({
                               </td>
 
                               {/* Thao tác */}
-                              <td className="py-2 pl-1.5 pr-3 text-center whitespace-nowrap">
+                              <td className="py-2.5 pl-2 pr-3.5 text-center whitespace-nowrap">
                                 {isAdded ? (
-                                  <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
-                                    <CheckIcon size={11} className="text-emerald-500" />
+                                  <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-zinc-500 font-mono">
+                                    <CheckIcon size={12} className="text-emerald-500" />
                                     <span>Đã có</span>
                                   </span>
                                 ) : (
@@ -702,14 +702,14 @@ export function WatchlistWidget({
                                         changePct: item.changePct,
                                       });
                                     }}
-                                    className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-medium text-[10px] transition-colors shadow-xs cursor-pointer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-medium text-[11px] transition-colors shadow-xs cursor-pointer"
                                     title={
                                       tickers.length >= 20
                                         ? "Watchlist tối đa 20 mã"
                                         : `Thêm ${item.symbol} vào danh mục`
                                     }
                                   >
-                                    <PlusIcon size={10} />
+                                    <PlusIcon size={11} />
                                     <span>Thêm</span>
                                   </button>
                                 )}

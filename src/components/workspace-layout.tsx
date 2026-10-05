@@ -161,7 +161,7 @@ export function WorkspaceLayout() {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 dark:bg-[#09090b] text-slate-800 dark:text-zinc-100 font-sans">
       {/* Top Header (Compact 44px for maximum vertical canvas) */}
-      <header className="relative z-40 h-[44px] px-2.5 sm:px-3.5 bg-white dark:bg-[#09090b] border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between shrink-0 select-none">
+      <header className="relative z-50 h-[44px] px-2.5 sm:px-3.5 bg-white dark:bg-[#09090b] border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between shrink-0 select-none">
         {/* Left: Brand Identity & Sidebar Toggle */}
         <div className="flex items-center gap-2">
           {!isMobile && (
@@ -202,7 +202,7 @@ export function WorkspaceLayout() {
         </div>
 
         {/* Center: Search Bar */}
-        <div className="flex-1 max-w-xs lg:max-w-sm mx-2 sm:mx-3">
+        <div className="flex-1 max-w-xs lg:max-w-sm mx-2 sm:mx-3 relative z-50">
           <StockSearchBar onSelectSymbol={handleOpenChart} />
         </div>
 
@@ -346,7 +346,7 @@ export function WorkspaceLayout() {
       </header>
 
       {/* Main Workspace Canvas */}
-      <main className="flex-1 overflow-hidden relative z-0">
+      <main className="flex-1 overflow-hidden relative z-0 isolate">
         {isMobile ? (
           <div className="h-full w-full">
             {activeTab === "chat" ? (

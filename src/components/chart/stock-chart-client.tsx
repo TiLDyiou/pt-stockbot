@@ -819,7 +819,7 @@ export default function StockChartClient({
   return (
     <div className="flex flex-col w-full h-full select-none bg-white dark:bg-[#171718] overflow-hidden">
       {/* Top Header of Card: Title & Ticker Tabs */}
-      <div className="relative z-30 flex flex-wrap items-center justify-between gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-100 dark:border-zinc-800/60">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-100 dark:border-zinc-800/60">
         <div className="flex items-center gap-2">
           {dragHandle}
           <div

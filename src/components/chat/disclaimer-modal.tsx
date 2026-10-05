@@ -25,7 +25,7 @@ export function DisclaimerModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-md bg-white dark:bg-[#171718] border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xl">
         <div className="flex items-center gap-2 mb-3 text-amber-500">
           <BadgeAlertIcon size={20} className="text-amber-500 shrink-0" animateOnHover />
