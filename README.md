@@ -1,91 +1,106 @@
-# PhuocThinh Stockbot - Workspace Phân tích Cổ phiếu Việt Nam
+# PhuocThinh Stockbot
 
-Ứng dụng phân tích cổ phiếu Việt Nam (HOSE, HNX, UPCoM) tương tác thời gian thực kết hợp AI Chatbot (Vercel AI SDK) và Dashboard kéo thả với biểu đồ TradingView Lightweight Charts.
+> PhuocThinh Stockbot là không gian làm việc trực quan hỗ trợ tìm kiếm, theo dõi và phân tích dữ liệu chứng khoán Việt Nam. Ứng dụng kết hợp bảng điều khiển tương tác nhiều phân hệ và trợ lý trí tuệ nhân tạo, giúp người dùng phổ thông tiếp cận dữ liệu tài chính rõ ràng, thuận tiện.
 
-## 1. Tính năng chính
+## 1. Mục tiêu và phạm vi ứng dụng
 
-- **AI Agent Chatbot tiếng Việt**:
-  - Tự động gọi các công cụ (tools) lấy thị giá, lịch sử, chỉ báo kỹ thuật, báo cáo tài chính và bối cảnh thị trường.
-  - Trả lời ngắn gọn, trực diện, đính kèm thời điểm dữ liệu (`as_of`).
-  - Tự động quét mã trong câu trả lời để hiện chip "Xem biểu đồ {mã}".
-- **Bảng điều khiển tương tác (Dashboard)**:
-  - Các widget kéo thả sắp xếp bằng `@dnd-kit`.
-  - Thay đổi kích thước linh hoạt (1 cột, 2 cột, toàn màn hình).
-  - Tự động lưu cấu hình layout vào `localStorage` của trình duyệt.
-- **Biểu đồ chứng khoán chuyên sâu (TradingView Lightweight Charts)**:
-  - Nến Nhật (Candlestick) chuẩn màu thị trường Việt Nam (xanh/đỏ).
-  - Thanh khối lượng (Volume) ở pane phụ bên dưới.
-  - Tùy chọn đường trung bình động SMA (20, 50).
-  - Bộ chọn khung thời gian (1M, 3M, 6M, 1Y).
-  - Chế độ so sánh % biến động với mã thứ hai.
-  - Toàn bộ dữ liệu nến được tải từ server qua `/api/candles`.
-- **Danh mục theo dõi (Watchlist)**:
-  - Kéo thả để sắp xếp lại các mã cổ phiếu.
-  - Sparkline mini trực quan hóa xu hướng giá gần nhất.
-  - Bấm vào mã để mở chart hoặc chèn câu hỏi phân tích.
-  - Nút "So sánh watchlist" để so sánh tối đa 5 mã.
-- **Kiến trúc Serverless 100% Stateless**:
-  - Không cần CSDL. Toàn bộ lịch sử chat, watchlist, và dashboard layout được lưu an toàn tại `localStorage`.
-  - Bộ nhớ đệm in-memory TTL với cơ chế **single-flight** chống stampede và điều chỉnh TTL động theo giờ giao dịch thị trường Việt Nam (Asia/Ho_Chi_Minh).
+Hệ thống được phát triển nhằm phục vụ mục đích nghiên cứu học thuật, học tập cá nhân và thử nghiệm các mô hình tương tác dữ liệu tài chính thời gian thực.
 
----
+Dự án hướng đến các nhóm người dùng:
+1. Người mới tìm hiểu thị trường chứng khoán cần giao diện trực quan, dễ thao tác.
+2. Nhà đầu tư cá nhân cần một màn hình làm việc tập trung để theo dõi đồng thời biểu đồ kỹ thuật, chỉ số cơ bản và tin tức.
+3. Người nghiên cứu công nghệ và sinh viên quan tâm đến ứng dụng trí tuệ nhân tạo trong xử lý dữ liệu tài chính.
 
-## 2. Hướng dẫn Deploy lên Vercel
+Hệ thống vận hành theo mô hình xử lý trực tiếp trên trình duyệt web của người dùng. Mọi tùy biến giao diện, danh mục cổ phiếu quan tâm và nhật ký trò chuyện đều được lưu trữ cục bộ trong bộ nhớ trình duyệt, không yêu cầu tạo tài khoản và không lưu trữ thông tin cá nhân trên máy chủ.
 
-1. **Import Repository**:
-   - Đẩy mã nguồn lên GitHub/GitLab.
-   - Truy cập [Vercel Dashboard](https://vercel.com) và bấm **Add New... -> Project**, chọn repository của bạn.
-2. **Cấu hình Region**:
-   - Trong mục **Project Settings -> Functions -> Function Region**, chọn region gần Việt Nam nhất (khuyến nghị: **Singapore - `sin1`**) để tối ưu độ trễ mạng khi truy vấn dữ liệu chứng khoán.
-3. **Cấu hình Biến Môi trường (Environment Variables)**:
-   - Thêm các biến môi trường sau trên Vercel:
-     - `LLM_MODEL`: Tên model (ví dụ: `gemini-2.5-flash`, `gpt-4o-mini`, hoặc `claude-3-5-sonnet-20241022`).
-     - `AI_PROVIDER`: `google`, `openai`, hoặc `anthropic`.
-     - `GOOGLE_GENERATIVE_AI_API_KEY`: API Key của Google AI Studio (nếu dùng Gemini).
-     - `OPENAI_API_KEY`: API Key của OpenAI (nếu dùng OpenAI).
-     - `ANTHROPIC_API_KEY`: API Key của Anthropic (nếu dùng Claude).
-     - `MAX_OUTPUT_TOKENS`: `1200` (mặc định).
-     - `HEALTH_TOKEN`: Chuỗi token bảo mật cho endpoint `/api/health`.
-     - `VNSTOCK_TIMEOUT_MS`: `8000` (mặc định 8 giây).
-     - `ENABLE_NEWS`: `false` (bật `true` nếu muốn kích hoạt tool tin tức).
-4. **Deploy**:
-   - Bấm **Deploy**. Vercel sẽ tự động build và cung cấp domain HTTPS miễn phí.
+## 2. Các phân hệ chức năng
 
----
+| Phân hệ | Nội dung chức năng | Ý nghĩa sử dụng |
+| :--- | :--- | :--- |
+| Biểu đồ kỹ thuật và định giá | Hiển thị nến giá, khối lượng giao dịch, các đường trung bình động và cho phép so sánh tỷ lệ biến động giá giữa hai cổ phiếu. Bảng chỉ số P/E, P/B, P/S, PEG hiển thị ngay bên dưới đồ thị. | Cung cấp cái nhìn toàn diện về lịch sử giá và mức định giá hiện tại của doanh nghiệp trong tương quan với mức bình quân của toàn ngành. |
+| Tin tức thị trường | Tổng hợp các bài viết từ nhiều nguồn báo chí tài chính trong nước, tự động phân loại mức độ liên quan và loại bỏ tin tức không thuộc lĩnh vực kinh tế. | Mặc định cung cấp bức tranh vĩ mô của toàn thị trường. Khi người dùng tra cứu một mã cụ thể, hệ thống ưu tiên hiển thị các bài viết về chính doanh nghiệp hoặc lĩnh vực kinh doanh liên quan. |
+| Trợ lý trí tuệ nhân tạo | Tiếp nhận câu hỏi bằng tiếng Việt thông thường và tự động truy xuất dữ liệu thị trường để phản hồi trực tiếp. | Hỗ trợ giải đáp nhanh các thắc mắc về thị giá, biến động khối lượng và các chỉ số tài chính cơ bản kèm mốc thời gian ghi nhận dữ liệu. |
+| Danh mục theo dõi | Lưu trữ danh sách các cổ phiếu quan tâm với đồ thị thu nhỏ dạng đường nét và hỗ trợ chế độ so sánh nhanh. | Giúp người dùng theo dõi diễn biến của nhiều mã cổ phiếu cùng lúc mà không cần mở từng cửa sổ riêng biệt. |
+| Bố cục tùy biến | Hỗ trợ kéo thả thay đổi vị trí giữa các phân hệ, chuyển đổi chế độ xem một cột hoặc hai cột, và mở rộng toàn màn hình. | Cho phép người dùng tự do sắp xếp không gian làm việc theo thói quen quan sát cá nhân. |
 
-## 3. Ghi chú về Gói Dịch vụ Vercel
+## 3. Nguồn dữ liệu và tính minh bạch học thuật
 
-- **Vercel Hobby Plan**: Chỉ áp dụng cho mục đích cá nhân, học tập hoặc thử nghiệm phi thương mại.
-- **Vercel Pro Plan**: Bắt buộc khi sử dụng ứng dụng cho mục đích thương mại, doanh nghiệp hoặc phục vụ lượng người dùng lớn để đảm bảo giới hạn execution time và bandwidth.
+> [!IMPORTANT]
+> **Tuyên bố về nguồn dữ liệu và miễn trừ trách nhiệm pháp lý**
+> 
+> 1. Nguồn dữ liệu: Ứng dụng thu thập dữ liệu công khai từ các công ty chứng khoán và cơ quan báo chí tại Việt Nam thông qua thư viện mã nguồn mở vnstock-js. Đây không phải cổng cung cấp dữ liệu giao dịch chính thức được cấp phép từ các sở giao dịch chứng khoán.
+> 2. Độ ổn định và độ trễ: Dữ liệu có thể xuất hiện độ trễ so với bảng giá thực tế tại sàn giao dịch hoặc gặp gián đoạn tạm thời khi các cổng thông tin nguồn thay đổi cấu trúc kỹ thuật.
+> 3. Giới hạn trách nhiệm: Mọi phân tích, chỉ số tài chính và câu trả lời từ trí tuệ nhân tạo chỉ mang tính chất tham khảo học thuật. Ứng dụng không đưa ra khuyến nghị đầu tư, tư vấn mua bán hay cam kết hiệu quả tài chính. Người dùng cần tự kiểm chứng thông tin và chịu trách nhiệm với mọi quyết định cá nhân.
 
----
+## 4. Hướng dẫn cài đặt và vận hành cục bộ
 
-## 4. Ghi chú Quan trọng về Nguồn Dữ liệu
+Các bước cài đặt được thiết kế tối giản để người dùng không chuyên về lập trình có thể tự chạy ứng dụng trên máy tính cá nhân.
 
-- Thư viện `vnstock-js` lấy dữ liệu từ các endpoint công khai không chính thức của các công ty chứng khoán tại Việt Nam. Các endpoint này có thể thay đổi cấu trúc dữ liệu, phản hồi chậm hoặc bị giới hạn/chặn truy cập bất kỳ lúc nào mà không báo trước.
-- Ứng dụng chỉ phục vụ mục đích thông tin và học thuật, không phải là hệ thống cung cấp dữ liệu giao dịch chính thức được cấp phép.
-- Vui lòng đọc kỹ các điều khoản sử dụng dữ liệu trước khi sử dụng cho bất kỳ mục đích thương mại nào.
+### Bước 1. Chuẩn bị môi trường
 
----
+Máy tính cần có môi trường Node.js từ phiên bản 18 trở lên. Người dùng có thể kiểm tra hoặc cài đặt bộ cài chính thức tại địa chỉ nodejs.org.
 
-## 5. Chạy thử nghiệm ở môi trường cục bộ (Local Development)
+### Bước 2. Tải mã nguồn
+
+Mở ứng dụng dòng lệnh trên máy tính và thực hiện tải dự án:
 
 ```bash
-# Cài đặt dependencies
-npm install
-
-# Sao chép biến môi trường
-cp .env.example .env.local
-
-# Chạy server phát triển
-npm run dev
-
-# Kiểm tra kiểu TypeScript
-npm run typecheck
-
-# Kiểm tra Linting
-npm run lint
-
-# Build bản phát hành
-npm run build
+git clone https://github.com/TiLDyiou/pt-stockbot.git
+cd pt-stockbot
 ```
+
+### Bước 3. Cài đặt các gói thành phần
+
+Chạy lệnh sau để tải các thư viện cần thiết:
+
+```bash
+npm install
+```
+
+### Bước 4. Thiết lập khóa truy cập trí tuệ nhân tạo
+
+Sao chép tệp cấu hình mẫu sang tệp cấu hình thực tế:
+
+```bash
+cp .env.example .env.local
+```
+
+Mở tệp `.env.local` bằng phần mềm ghi chú bất kỳ và bổ sung khóa API. Ví dụ đối với dịch vụ Google Gemini:
+
+```env
+AI_PROVIDER=google
+GOOGLE_GENERATIVE_AI_API_KEY=khoa_api_cua_ban
+LLM_MODEL=gemini-2.5-flash
+```
+
+Nếu muốn sử dụng dịch vụ OpenAI, người dùng thay đổi cấu hình tương ứng:
+
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=khoa_api_cua_ban
+LLM_MODEL=gpt-4o-mini
+```
+
+### Bước 5. Khởi động ứng dụng
+
+Thực thi lệnh chạy môi trường phát triển:
+
+```bash
+npm run dev
+```
+
+Khi màn hình hiển thị thông báo sẵn sàng, mở trình duyệt web và truy cập địa chỉ:
+
+```
+http://localhost:3000
+```
+
+## 5. Hướng dẫn xuất bản lên nền tảng Vercel
+
+Ứng dụng có thể được đưa lên mạng Internet miễn phí thông qua các bước sau:
+
+1. Đưa toàn bộ thư mục dự án lên tài khoản GitHub cá nhân.
+2. Đăng nhập vào trang vercel.com, chọn mục tạo dự án mới và liên kết với kho lưu trữ trên GitHub.
+3. Trong mục thiết lập vị trí máy chủ, ưu tiên chọn khu vực Singapore mã sin1 nhằm tối ưu tốc độ kết nối về Việt Nam.
+4. Sao chép các thông số cấu hình trong tệp `.env.local` vào phần thiết lập biến môi trường trên Vercel.
+5. Nhấn nút hoàn tất để nền tảng tự động biên dịch và tạo đường dẫn truy cập trực tuyến.
