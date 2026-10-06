@@ -273,22 +273,6 @@ export function StockNewsWidget({
                       {item.source}
                     </span>
 
-                    {/* Badge mức độ liên quan (Màu đặc) */}
-                    {item.relevance === "direct" && isSpecificStock && (
-                      <span className="inline-block px-1.5 py-0.2 rounded font-mono font-bold text-[10px] bg-emerald-600 text-white">
-                        Tin {symbol}
-                      </span>
-                    )}
-                    {item.relevance === "partial" && (
-                      <span className="inline-block px-1.5 py-0.2 rounded font-sans font-bold text-[10px] bg-blue-600 text-white">
-                        Liên quan ngành
-                      </span>
-                    )}
-                    {item.relevance === "market" && (
-                      <span className="inline-block px-1.5 py-0.2 rounded font-sans font-bold text-[10px] bg-slate-600 dark:bg-zinc-700 text-white">
-                        Thị trường
-                      </span>
-                    )}
 
                     {/* Thời gian */}
                     <span className="flex items-center gap-1 text-slate-400 dark:text-zinc-500 text-[10px] font-mono">
