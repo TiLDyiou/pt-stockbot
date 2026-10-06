@@ -80,9 +80,6 @@ cp .env.example .env.local
 # Chạy server phát triển
 npm run dev
 
-# Chạy kiểm thử tự động
-npm test
-
 # Kiểm tra kiểu TypeScript
 npm run typecheck
 
