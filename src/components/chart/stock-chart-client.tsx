@@ -22,6 +22,7 @@ import {
   GitCompareArrowsIcon,
   GripVerticalIcon,
 } from "lucide-animated";
+import { StockFinancialMetrics } from "./stock-financial-metrics";
 
 interface StockChartClientProps {
   symbol: string;
@@ -93,6 +94,7 @@ export default function StockChartClient({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ratios, setRatios] = useState<ValuationRatios | null>(null);
+  const [isLoadingRatios, setIsLoadingRatios] = useState(false);
 
   // Crosshair hover state
   const [hoveredData, setHoveredData] = useState<{
@@ -227,6 +229,7 @@ export default function StockChartClient({
   useEffect(() => {
     let isCancelled = false;
     const fetchValuationRatios = async () => {
+      setIsLoadingRatios(true);
       try {
         const res = await fetch(`/api/ratios?symbol=${symbol}`);
         if (res.ok) {
@@ -239,6 +242,10 @@ export default function StockChartClient({
         }
       } catch {
         if (!isCancelled) setRatios(null);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingRatios(false);
+        }
       }
     };
 
@@ -1227,9 +1234,9 @@ export default function StockChartClient({
         </div>
       </div>
 
-      {/* OHLC & Valuation Bar */}
+      {/* OHLC Bar */}
       {displayData && (
-        <div className="flex flex-wrap items-center justify-between gap-y-1 gap-x-3 mx-3 sm:mx-4 px-2.5 py-1 my-1 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60 text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+        <div className="flex flex-wrap items-center justify-between gap-y-1 gap-x-3 mx-3 sm:mx-4 px-2.5 py-1 my-0.5 rounded-md bg-slate-50 dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/60 text-[11px] font-mono text-slate-500 dark:text-zinc-400">
           <div className="flex flex-wrap items-center gap-3">
             <span>
               Ngày:{" "}
@@ -1261,36 +1268,22 @@ export default function StockChartClient({
                 {formatPrice(displayData.close)}
               </strong>
             </span>
+            <span>
+              Khối lượng:{" "}
+              <strong className="text-slate-700 dark:text-zinc-200">
+                {formatVolume(displayData.volume)}
+              </strong>
+            </span>
           </div>
-
-          {ratios &&
-            (ratios.pe != null || ratios.pb != null || ratios.ps != null) && (
-              <div className="flex items-center gap-2.5">
-                <span className="hidden md:inline text-slate-300 dark:text-zinc-700">
-                  |
-                </span>
-                <span title="Chỉ số P/E: Giá / Lợi nhuận mỗi CP">
-                  P/E:{" "}
-                  <strong className="text-slate-800 dark:text-zinc-100">
-                    {ratios.pe != null ? ratios.pe.toFixed(2) : "—"}
-                  </strong>
-                </span>
-                <span title="Chỉ số P/B: Giá / Giá trị sổ sách">
-                  P/B:{" "}
-                  <strong className="text-slate-800 dark:text-zinc-100">
-                    {ratios.pb != null ? ratios.pb.toFixed(2) : "—"}
-                  </strong>
-                </span>
-                <span title="Chỉ số P/S: Giá / Doanh thu">
-                  P/S:{" "}
-                  <strong className="text-slate-800 dark:text-zinc-100">
-                    {ratios.ps != null ? ratios.ps.toFixed(2) : "—"}
-                  </strong>
-                </span>
-              </div>
-            )}
         </div>
       )}
+
+      {/* Financial Valuation & Industry Benchmark Metrics */}
+      <StockFinancialMetrics
+        ratios={ratios}
+        isLoading={isLoadingRatios}
+        symbol={symbol}
+      />
 
       {/* Chart Canvas: Guaranteed min-height and auto-resize with panel */}
       <div

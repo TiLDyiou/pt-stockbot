@@ -456,29 +456,175 @@ export async function getRatios(ticker: string): Promise<ValuationRatios | null>
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
-      const vnstock = (await import("vnstock-js")).default;
       try {
-        const screening = vnstock.stock.screening as any;
-        const raw: any = await withTimeout(
-          screening.fetchRatios(sym),
-          getTimeoutMs(),
-          `Chỉ số định giá ${sym}`
-        );
-        if (!raw) return null;
+        const { fetchWithRetry } = await import("vnstock-js/dist/pipeline/fetch.js");
+        const { VCI_COMPANY_URL } = await import("vnstock-js/dist/shared/constants.js");
+
+        const fetchStats = async (s: string) => {
+          const res: any = await withTimeout(
+            fetchWithRetry({
+              url: `${VCI_COMPANY_URL}/${s}/statistics-financial`,
+              method: "GET",
+            }),
+            getTimeoutMs(),
+            `Thống kê tài chính ${s}`
+          );
+          return res?.data || [];
+        };
+
+        const rows = await fetchStats(sym);
+        if (!Array.isArray(rows) || rows.length === 0) return null;
+
+        const latest = rows[rows.length - 1];
+        if (!latest) return null;
 
         const num = (v: any) =>
           typeof v === "number" && Number.isFinite(v) ? parseFloat(v.toFixed(2)) : null;
 
+        // Tính EPS Growth & PEG
+        let epsGrowth: number | null = null;
+        let peg: number | null = null;
+        const prevYearRow =
+          rows.find(
+            (r: any) =>
+              r.quarter === latest.quarter &&
+              Number(r.year) === Number(latest.year) - 1
+          ) || rows[rows.length - 5];
+
+        if (
+          latest.numberOfSharesMktCap > 0 &&
+          latest.pe > 0 &&
+          prevYearRow &&
+          prevYearRow.numberOfSharesMktCap > 0 &&
+          prevYearRow.pe > 0
+        ) {
+          const epsNow =
+            latest.marketCap / latest.numberOfSharesMktCap / latest.pe;
+          const epsPrev =
+            prevYearRow.marketCap / prevYearRow.numberOfSharesMktCap / prevYearRow.pe;
+          if (epsPrev > 0) {
+            epsGrowth = parseFloat(
+              (((epsNow - epsPrev) / epsPrev) * 100).toFixed(1)
+            );
+            if (epsGrowth > 0) {
+              peg = parseFloat((latest.pe / epsGrowth).toFixed(2));
+            }
+          }
+        }
+
+        // Lấy thông tin ngành & Trung bình ngành
+        let industryName: string | null = null;
+        let industryPe: number | null = null;
+        let industryPb: number | null = null;
+        let industryRoe: number | null = null;
+
+        try {
+          const screeningMod = await import("vnstock-js/dist/core/stock/screening.js");
+          const ScreeningClass =
+            typeof screeningMod.default === "function"
+              ? screeningMod.default
+              : (screeningMod.default as any)?.default;
+          const { VciAdapter } = await import("vnstock-js/dist/adapters/vci.js");
+
+          if (ScreeningClass) {
+            const scr = new ScreeningClass(new VciAdapter());
+            const map = await scr.industryMap();
+            if (map && map[sym]) {
+              industryName = map[sym].industry || null;
+              if (industryName) {
+                const peers = Object.entries(map)
+                  .filter(
+                    ([k, v]: any) => v.industry === industryName && k !== sym
+                  )
+                  .map(([k]) => k)
+                  .slice(0, 4);
+
+                if (peers.length > 0) {
+                  const peerStats = await Promise.allSettled(
+                    peers.map((p) => fetchStats(p))
+                  );
+                  const peerRows = peerStats
+                    .filter(
+                      (p): p is PromiseFulfilledResult<any[]> =>
+                        p.status === "fulfilled" && p.value?.length > 0
+                    )
+                    .map((p) => p.value[p.value.length - 1]);
+
+                  const validPe = peerRows
+                    .map((r) => r.pe)
+                    .filter((v) => typeof v === "number" && v > 0);
+                  const validPb = peerRows
+                    .map((r) => r.pb)
+                    .filter((v) => typeof v === "number" && v > 0);
+                  const validRoe = peerRows
+                    .map((r) => r.roe)
+                    .filter((v) => typeof v === "number" && v > 0);
+
+                  if (validPe.length > 0) {
+                    industryPe = parseFloat(
+                      (
+                        validPe.reduce((a, b) => a + b, 0) / validPe.length
+                      ).toFixed(2)
+                    );
+                  }
+                  if (validPb.length > 0) {
+                    industryPb = parseFloat(
+                      (
+                        validPb.reduce((a, b) => a + b, 0) / validPb.length
+                      ).toFixed(2)
+                    );
+                  }
+                  if (validRoe.length > 0) {
+                    industryRoe = parseFloat(
+                      (
+                        (validRoe.reduce((a, b) => a + b, 0) /
+                          validRoe.length) *
+                        100
+                      ).toFixed(2)
+                    );
+                  }
+                }
+              }
+            }
+          }
+        } catch (indErr) {
+          console.warn(`Lỗi lấy ngành cho ${sym}:`, indErr);
+        }
+
         return {
           symbol: sym,
-          pe: num(raw.pe),
-          pb: num(raw.pb),
-          ps: num(raw.ps),
-          roe: raw.roe != null ? parseFloat((raw.roe * 100).toFixed(2)) : null,
-          roa: raw.roa != null ? parseFloat((raw.roa * 100).toFixed(2)) : null,
-          marketCap: raw.marketCap ? Math.round(raw.marketCap / 1e9) : null,
-          year: raw.year || raw.yearReport,
-          quarter: raw.quarter,
+          pe: num(latest.pe),
+          pb: num(latest.pb),
+          ps: num(latest.ps),
+          peg,
+          epsGrowth,
+          roe:
+            latest.roe != null
+              ? parseFloat((latest.roe * 100).toFixed(2))
+              : null,
+          roa:
+            latest.roa != null
+              ? parseFloat((latest.roa * 100).toFixed(2))
+              : null,
+          roic:
+            latest.roic != null
+              ? parseFloat((latest.roic * 100).toFixed(2))
+              : null,
+          evToEbitda: num(latest.evToEbitda),
+          netProfitMargin:
+            latest.afterTaxProfitMargin != null
+              ? parseFloat((latest.afterTaxProfitMargin * 100).toFixed(2))
+              : null,
+          debtToEquity: num(latest.debtToEquity),
+          marketCap: latest.marketCap
+            ? Math.round(latest.marketCap / 1e9)
+            : null,
+          year: latest.year || latest.yearReport,
+          quarter: latest.quarter,
+          industry: industryName,
+          industryPe,
+          industryPb,
+          industryRoe,
         };
       } catch (err) {
         console.warn(`Lỗi lấy ratios cho ${sym}:`, err);
@@ -613,12 +759,387 @@ export async function compareSymbolsList(tickers: string[]): Promise<CompareItem
   ) as Promise<CompareItem[]>;
 }
 
+// Danh mục nhận diện doanh nghiệp & ngành nghề phục vụ lọc tin tức chuẩn xác
+interface TickerKeywords {
+  names: string[];
+  sector: string[];
+}
+
+const POPULAR_TICKER_MAP: Record<string, TickerKeywords> = {
+  HPG: {
+    names: ["Hòa Phát", "Hoa Phat", "Trần Đình Long", "thép Hòa Phát"],
+    sector: ["ngành thép", "giá thép", "thép xây dựng", "quặng sắt", "hrc", "xuất khẩu thép"],
+  },
+  HSG: {
+    names: ["Hoa Sen", "Lê Phước Vũ", "Tôn Hoa Sen"],
+    sector: ["ngành tôn", "ngành thép", "tôn mạ", "giá thép", "hrc"],
+  },
+  NKG: {
+    names: ["Nam Kim", "Tôn Nam Kim"],
+    sector: ["ngành tôn", "ngành thép", "tôn mạ", "xuất khẩu tôn"],
+  },
+  VGS: {
+    names: ["Ống thép Việt Đức"],
+    sector: ["ngành thép", "ống thép", "thép xây dựng"],
+  },
+  FPT: {
+    names: ["FPT", "Trương Gia Bình", "FPT Telecom", "FPT Software", "FPT IS", "FPT Smart Cloud"],
+    sector: ["công nghệ thông tin", "chuyển đổi số", "bán dẫn", "trí tuệ nhân tạo", "xuất khẩu phần mềm"],
+  },
+  MWG: {
+    names: ["Thế Giới Di Động", "Bách Hóa Xanh", "Điện Máy Xanh", "TopZone", "Nguyễn Đức Tài", "An Khang"],
+    sector: ["bán lẻ", "tiêu dùng", "chuỗi bách hóa", "thiết bị di động"],
+  },
+  FRT: {
+    names: ["FPT Retail", "Long Châu", "Nguyễn Bạch Điệp"],
+    sector: ["chuỗi nhà thuốc", "dược phẩm", "bán lẻ dược phẩm", "bán lẻ ict"],
+  },
+  DGW: {
+    names: ["Digiworld", "Thế Giới Số", "Đoàn Hồng Việt"],
+    sector: ["phân phối ict", "phân phối công nghệ", "hàng tiêu dùng"],
+  },
+  PNJ: {
+    names: ["Vàng bạc Đá quý Phú Nhuận", "PNJ", "Cao Thị Ngọc Dung"],
+    sector: ["thị trường vàng", "vàng trang sức", "trang sức", "vàng miếng"],
+  },
+  VNM: {
+    names: ["Vinamilk", "Mai Kiều Liên", "Sữa Việt Nam"],
+    sector: ["ngành sữa", "sữa tươi", "chăn nuôi bò sữa", "tiêu dùng nhanh", "fmcg"],
+  },
+  MSN: {
+    names: ["Masan", "Masan Consumer", "WinCommerce", "WinMart", "Nguyễn Đăng Quang"],
+    sector: ["tiêu dùng nhanh", "fmcg", "bán lẻ nhu yếu phẩm", "thịt mát meatdeli"],
+  },
+  SAB: {
+    names: ["Sabeco", "Bia Sài Gòn"],
+    sector: ["ngành bia", "đồ uống", "tiêu dùng"],
+  },
+  DBC: {
+    names: ["Dabaco", "Nguyễn Như So"],
+    sector: ["chăn nuôi heo", "giá heo hơi", "thức ăn chăn nuôi", "vaccine dịch tả"],
+  },
+  VIC: {
+    names: ["Vingroup", "VinFast", "Phạm Nhật Vượng", "Vinpearl", "Vinschool", "Vinmec", "VinCons"],
+    sector: ["bất động sản", "xe điện", "du lịch nghỉ dưỡng", "hạ tầng"],
+  },
+  VHM: {
+    names: ["Vinhomes", "Vinhomes Grand Park", "Vinhomes Ocean Park", "Vinhomes Royal Island"],
+    sector: ["bất động sản", "nhà ở", "đô thị", "thị trường địa ốc"],
+  },
+  VRE: {
+    names: ["Vincom Retail", "Vincom Mega Mall", "Vincom Center"],
+    sector: ["trung tâm thương mại", "mặt bằng bán lẻ", "bất động sản bán lẻ"],
+  },
+  NVL: {
+    names: ["Novaland", "Bùi Thành Nhơn", "Aqua City", "NovaWorld"],
+    sector: ["bất động sản", "tái cơ cấu nợ", "trái phiếu doanh nghiệp", "thị trường địa ốc"],
+  },
+  PDR: {
+    names: ["Phát Đạt", "Nguyễn Văn Đạt"],
+    sector: ["bất động sản", "địa ốc"],
+  },
+  DIG: {
+    names: ["DIC Corp", "Đầu tư Phát triển Xây dựng"],
+    sector: ["bất động sản", "quỹ đất", "địa ốc"],
+  },
+  DXG: {
+    names: ["Đất Xanh", "Lương Trí Thìn"],
+    sector: ["bất động sản", "môi giới bất động sản"],
+  },
+  KDH: {
+    names: ["Nhà Khang Điền", "Khang Điền"],
+    sector: ["bất động sản", "pháp lý dự án", "nhà liền thổ"],
+  },
+  NLG: {
+    names: ["Nam Long", "Nguyễn Xuân Quang", "Akari", "Mizuki"],
+    sector: ["bất động sản", "nhà ở vừa túi tiền", "đô thị vệ tinh"],
+  },
+  BCM: {
+    names: ["Becamex IDC", "Becamex"],
+    sector: ["bất động sản khu công nghiệp", "khu công nghiệp", "fdi"],
+  },
+  KBC: {
+    names: ["Kinh Bắc", "Đặng Thành Tâm"],
+    sector: ["bất động sản khu công nghiệp", "thu hút fdi", "khu đô thị"],
+  },
+  IDC: {
+    names: ["IDICO"],
+    sector: ["khu công nghiệp", "thu hút fdi", "cho thuê đất công nghiệp"],
+  },
+  VGC: {
+    names: ["Viglacera"],
+    sector: ["khu công nghiệp", "vật liệu xây dựng", "kính xây dựng"],
+  },
+  VCB: {
+    names: ["Vietcombank", "Ngoại thương Việt Nam"],
+    sector: ["ngân hàng", "tín dụng", "lãi suất", "nợ xấu", "casa"],
+  },
+  BID: {
+    names: ["BIDV", "Đầu tư và Phát triển Việt Nam"],
+    sector: ["ngân hàng", "tín dụng", "lãi suất", "nợ xấu"],
+  },
+  CTG: {
+    names: ["VietinBank", "Công Thương Việt Nam"],
+    sector: ["ngân hàng", "tín dụng", "lãi suất", "nợ xấu"],
+  },
+  TCB: {
+    names: ["Techcombank", "Kỹ thương", "Hồ Hùng Anh"],
+    sector: ["ngân hàng", "tín dụng", "casa", "trái phiếu", "bất động sản"],
+  },
+  MBB: {
+    names: ["MBBank", "Ngân hàng Quân Đội", "Lưu Trung Thái"],
+    sector: ["ngân hàng", "tín dụng", "casa", "ngân hàng số"],
+  },
+  ACB: {
+    names: ["Ngân hàng Á Châu", "Trần Hùng Huy"],
+    sector: ["ngân hàng", "bán lẻ", "tín dụng", "chất lượng tài sản"],
+  },
+  VPB: {
+    names: ["VPBank", "Việt Nam Thịnh Vượng", "FE Credit", "Ngô Chí Dũng"],
+    sector: ["ngân hàng", "tài chính tiêu dùng", "tín dụng"],
+  },
+  STB: {
+    names: ["Sacombank", "Sài Gòn Thương Tín", "Dương Công Minh"],
+    sector: ["ngân hàng", "xử lý nợ vmc", "tái cơ cấu ngân hàng"],
+  },
+  HDB: {
+    names: ["HDBank", "Nguyễn Thị Phương Thảo"],
+    sector: ["ngân hàng", "tín dụng", "hàng không"],
+  },
+  VIB: {
+    names: ["VIB", "Quốc Tế Việt Nam"],
+    sector: ["ngân hàng", "cho vay mua ô tô", "cho vay mua nhà"],
+  },
+  SHB: {
+    names: ["SHB", "Sài Gòn - Hà Nội", "Đỗ Quang Hiển", "Bầu Hiển"],
+    sector: ["ngân hàng", "tín dụng"],
+  },
+  TPB: {
+    names: ["TPBank", "Tiên Phong", "Đỗ Minh Phú"],
+    sector: ["ngân hàng", "ngân hàng số", "livebank"],
+  },
+  LPB: {
+    names: ["LPBank", "Lộc Phát", "Nguyễn Đức Thụy", "Bầu Thụy"],
+    sector: ["ngân hàng", "mạng lưới bưu điện"],
+  },
+  MSB: {
+    names: ["MSB", "Hàng Hải Việt Nam"],
+    sector: ["ngân hàng", "tín dụng"],
+  },
+  SSI: {
+    names: ["Chứng khoán SSI", "Nguyễn Duy Hưng"],
+    sector: ["ngành chứng khoán", "thanh khoản thị trường", "nâng hạng thị trường", "krx", "margin"],
+  },
+  VND: {
+    names: ["VNDIRECT", "Phạm Minh Hương"],
+    sector: ["ngành chứng khoán", "trái phiếu", "thị phần môi giới"],
+  },
+  VCI: {
+    names: ["Vietcap", "Chứng khoán Bản Việt", "Tô Hải"],
+    sector: ["ngành chứng khoán", "ngân hàng đầu tư", "ib", "thương vụ m&a"],
+  },
+  HCM: {
+    names: ["Chứng khoán HSC", "Hồ Chí Minh"],
+    sector: ["ngành chứng khoán", "khách hàng tổ chức", "môi giới"],
+  },
+  SHS: {
+    names: ["Chứng khoán Sài Gòn - Hà Nội", "SHS"],
+    sector: ["ngành chứng khoán", "tự doanh chứng khoán"],
+  },
+  MBS: {
+    names: ["Chứng khoán MB", "MBS"],
+    sector: ["ngành chứng khoán", "môi giới chứng khoán"],
+  },
+  GAS: {
+    names: ["PV Gas", "Tổng công ty Khí", "Kho cảng LNG Thị Vải"],
+    sector: ["ngành dầu khí", "giá khí", "lng", "lô b ô môn"],
+  },
+  PVD: {
+    names: ["PV Drilling", "Khoan Dầu khí"],
+    sector: ["giàn khoan", "giá thuê giàn", "dịch vụ dầu khí", "giá dầu"],
+  },
+  PVS: {
+    names: ["PTSC", "Kỹ thuật Dầu khí", "Điện gió ngoài khơi"],
+    sector: ["dầu khí", "năng lượng tái tạo", "xây lắp dầu khí", "lô b"],
+  },
+  PLX: {
+    names: ["Petrolimex", "Tập đoàn Xăng dầu"],
+    sector: ["giá xăng dầu", "bán lẻ xăng dầu", "quỹ bình ổn giá"],
+  },
+  POW: {
+    names: ["PV Power", "Điện lực Dầu khí", "Nhơn Trạch 3", "Nhơn Trạch 4"],
+    sector: ["ngành điện", "điện khí lng", "phát điện"],
+  },
+  BSR: {
+    names: ["Lọc hóa dầu Bình Sơn", "Dung Quất"],
+    sector: ["lọc hóa dầu", "crack spread", "giá xăng dầu"],
+  },
+  DGC: {
+    names: ["Hóa chất Đức Giang", "Đào Hữu Huyền"],
+    sector: ["phốt pho vàng", "hóa chất", "bán dẫn", "pin lithium"],
+  },
+  DCM: {
+    names: ["Đạm Cà Mau", "Phân bón Dầu khí Cà Mau"],
+    sector: ["phân bón", "giá ure", "xuất khẩu phân bón"],
+  },
+  DPM: {
+    names: ["Đạm Phú Mỹ", "Tổng công ty Phân bón và Hóa chất Dầu khí"],
+    sector: ["phân bón", "giá ure", "hóa chất dầu khí"],
+  },
+  GMD: {
+    names: ["Gemadept", "Gemalink"],
+    sector: ["cảng biển", "cảng nước sâu", "vận tải container", "logistics"],
+  },
+  HAH: {
+    names: ["Vận tải và Xếp dỡ Hải An", "Hải An"],
+    sector: ["vận tải biển", "giá cước container", "đội tàu container"],
+  },
+  VHC: {
+    names: ["Vĩnh Hoàn", "Trương Thị Lệ Khanh", "Nữ hoàng cá tra"],
+    sector: ["xuất khẩu cá tra", "thủy sản", "xuất khẩu sang mỹ", "collagen"],
+  },
+  ANV: {
+    names: ["Nam Việt"],
+    sector: ["xuất khẩu cá tra", "thủy sản"],
+  },
+};
+
+const JUNK_KEYWORDS = [
+  "tiktok", "shopee", "người mẫu", "hoa hậu", "diễn viên", "vụ án",
+  "tai nạn", "cướp", "giết", "hiếp", "đánh ghen", "showbiz", "bắt cóc",
+  "lừa đảo qua mạng", "tạm hoãn xuất cảnh", "clip nóng", "ukraine", "nga", "israel", "gaza"
+];
+
+const MARKET_FINANCE_KEYWORDS = [
+  "chứng khoán", "cổ phiếu", "thị trường", "vn-index", "vnindex", "vn30",
+  "hnx", "upcom", "giao dịch", "thanh khoản", "dòng tiền", "khối ngoại",
+  "tự doanh", "lãi suất", "tỷ giá", "ngân hàng nhà nước", "ubck", "bộ tài chính",
+  "kết quả kinh doanh", "báo cáo tài chính", "đầu tư", "trái phiếu", "vĩ mô",
+  "kinh tế", "doanh nghiệp", "lợi nhuận", "doanh thu", "nâng hạng", "krx",
+  "cổ tức", "niêm yết", "đại hội cổ đông", "hose", "hưng phấn", "điều chỉnh", "áp lực bán"
+];
+
+const STOCK_FOCUS_KEYWORDS = [
+  "chứng khoán", "cổ phiếu", "vn-index", "vnindex", "phiên", "giao dịch",
+  "khối ngoại", "tự doanh", "thanh khoản", "nhận định", "trước giờ giao dịch"
+];
+
 /**
- * Tra cứu tin tức doanh nghiệp
+ * Lấy kho tin tức thô trong 7 ngày gần nhất (được cache 5 phút)
+ */
+async function getRawNewsPool(): Promise<any[]> {
+  const cacheKey = "raw_news_pool_7d";
+
+  return serverCache.getOrFetch(
+    cacheKey,
+    async () => {
+      const { news } = await import("vnstock-js");
+      const now = new Date();
+      const promises: Promise<any>[] = [];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10);
+        promises.push(
+          withTimeout(news.byDate(d), getTimeoutMs(), `Tin tức ngày ${d}`).catch(() => [])
+        );
+      }
+
+      const results = await Promise.allSettled(promises);
+      const allNews: any[] = [];
+      const seen = new Set<string>();
+
+      for (const r of results) {
+        if (r.status === "fulfilled" && Array.isArray(r.value)) {
+          for (const item of r.value) {
+            const key = item.link || item.url || item.title;
+            if (key && !seen.has(key)) {
+              seen.add(key);
+              allNews.push(item);
+            }
+          }
+        }
+      }
+
+      return allNews;
+    },
+    300_000 // 5 minutes TTL
+  ) as Promise<any[]>;
+}
+
+/**
+ * Trích xuất các tên giao dịch / thương hiệu rút gọn từ tên pháp lý đầy đủ của công ty
+ */
+function extractCleanCompanyNames(fullName?: string): string[] {
+  if (!fullName) return [];
+  const names = new Set<string>();
+  const trimmed = fullName.trim();
+  if (trimmed) names.add(trimmed);
+
+  const cleaned = trimmed
+    .replace(/^Công ty\s+(Cổ phần|TNHH)?\s*(-)?\s*/i, "")
+    .replace(/^Tổng\s+Công ty\s+(Cổ phần|TNHH)?\s*(-)?\s*/i, "")
+    .replace(/^Tập đoàn\s+/i, "")
+    .replace(/^Ngân hàng\s+(TMCP|Thương mại Cổ phần)?\s*/i, "")
+    .replace(/^[-\s]+/, "")
+    .trim();
+
+  if (cleaned && cleaned.length >= 3 && cleaned !== trimmed) {
+    names.add(cleaned);
+  }
+
+  return Array.from(names);
+}
+
+/**
+ * Kết hợp 2 phương pháp:
+ * 1. Lọc tay (Curated map): tên lãnh đạo, thương hiệu con, từ khóa ngành chuyên sâu cho các mã phổ biến
+ * 2. Tự động bóc tách (Auto-discovery): tra cứu vnstock.stock.search(sym) lấy tên công ty, ngành ICB tự động
+ */
+async function resolveHybridTickerKeywords(
+  sym: string
+): Promise<{ names: string[]; sector: string[] }> {
+  const cacheKey = `ticker_hybrid_kw:${sym}`;
+
+  return serverCache.getOrFetch(
+    cacheKey,
+    async () => {
+      const curated = POPULAR_TICKER_MAP[sym] || { names: [], sector: [] };
+      const autoNames: string[] = [];
+      const autoSectors: string[] = [];
+      try {
+        await ensureVnstockInit();
+        const { stock } = await import("vnstock-js");
+        const list = (stock && typeof stock.search === "function") ? stock.search(sym) : [];
+        const match = Array.isArray(list)
+          ? list.find((x: any) => x.symbol?.toUpperCase() === sym) || list[0]
+          : null;
+
+        if (match) {
+          if (match.companyName) {
+            autoNames.push(...extractCleanCompanyNames(match.companyName));
+          }
+          if (match.industry) autoSectors.push(String(match.industry).toLowerCase());
+          if (match.sector) autoSectors.push(String(match.sector).toLowerCase());
+        }
+      } catch {
+        // bỏ qua nếu lỗi auto lookup, fallback dùng curated
+      }
+
+      return {
+        names: Array.from(new Set([...curated.names, ...autoNames])),
+        sector: Array.from(new Set([...curated.sector, ...autoSectors])),
+      };
+    },
+    86_400_000 // 24 hours TTL
+  ) as Promise<{ names: string[]; sector: string[] }>;
+}
+
+/**
+ * Tra cứu tin tức doanh nghiệp hoặc tin thị trường chung
  */
 export async function getNews(
   ticker?: string,
-  limit = 5,
+  limit = 10,
   isEnabledOverride?: boolean
 ): Promise<NewsItem[]> {
   const isEnabled =
@@ -629,61 +1150,138 @@ export async function getNews(
     return [];
   }
 
-  const query = ticker ? ticker.trim().toUpperCase() : "thị trường";
-  const cacheKey = `news:${query}:${limit}`;
+  const rawTicker = ticker?.trim().toUpperCase();
+  const isMarketQuery =
+    !rawTicker ||
+    rawTicker === "MARKET" ||
+    rawTicker === "VNINDEX" ||
+    rawTicker === "ALL" ||
+    rawTicker === "THI_TRUONG";
+
+  const cacheKey = `news:${isMarketQuery ? "MARKET" : rawTicker}:${limit}`;
 
   return serverCache.getOrFetch(
     cacheKey,
     async () => {
-      const { news } = await import("vnstock-js");
-      let results: any[] = [];
+      const rawPool = await getRawNewsPool();
 
-      try {
-        const searchResults = await withTimeout(
-          news.search(query),
-          getTimeoutMs(),
-          `Tin tức ${query}`
-        );
-        if (Array.isArray(searchResults) && searchResults.length > 0) {
-          results = searchResults;
-        }
-      } catch {
-        // Fallback to byDate if search is unavailable
-      }
+      // 1. Chế độ Tin Thị Trường Chung
+      if (isMarketQuery) {
+        const filteredMarket = rawPool.filter((a) => {
+          const text = `${a.title || ""} ${a.summary || ""}`.toLowerCase();
+          if (JUNK_KEYWORDS.some((k) => text.includes(k))) return false;
+          return MARKET_FINANCE_KEYWORDS.some((k) => text.includes(k));
+        });
 
-      if (results.length === 0) {
-        try {
-          const today = new Date().toISOString().slice(0, 10);
-          const dateResults = await withTimeout(
-            news.byDate(today),
-            getTimeoutMs(),
-            `Tin tức ngày ${today}`
-          );
-          if (Array.isArray(dateResults)) {
-            if (ticker) {
-              // Only include news that actually mentions the ticker
-              const matched = dateResults.filter(
-                (n: any) =>
-                  n.title?.toUpperCase().includes(query) ||
-                  n.summary?.toUpperCase().includes(query)
-              );
-              results = matched;
-            } else {
-              results = dateResults;
-            }
+        filteredMarket.sort((a, b) => {
+          const textA = `${a.title || ""} ${a.summary || ""}`.toLowerCase();
+          const textB = `${b.title || ""} ${b.summary || ""}`.toLowerCase();
+          const scoreA = STOCK_FOCUS_KEYWORDS.filter((k) => textA.includes(k)).length;
+          const scoreB = STOCK_FOCUS_KEYWORDS.filter((k) => textB.includes(k)).length;
+
+          const dateA = new Date(a.publishedAt || a.date).getTime();
+          const dateB = new Date(b.publishedAt || b.date).getTime();
+
+          // Trong vòng 12 giờ, ưu tiên bài có độ tập trung chứng khoán cao hơn
+          if (Math.abs(dateA - dateB) < 43200000 && scoreA !== scoreB) {
+            return scoreB - scoreA;
           }
-        } catch {
-          // ignore fallback error
+          return dateB - dateA;
+        });
+
+        return filteredMarket.slice(0, limit).map((n) => ({
+          title: n.title || "",
+          source: n.source || "Tổng hợp",
+          date: n.publishedAt || n.publishDate || n.date || new Date().toISOString(),
+          url: n.url || n.link || "",
+          summary: n.summary || "",
+          relevance: "market" as const,
+        }));
+      }
+
+      // 2. Chế độ Tin theo Mã Cổ Phiếu cụ thể (Kết hợp Lọc Tay & Tự Động)
+      const sym = rawTicker;
+      const tickerInfo = await resolveHybridTickerKeywords(sym);
+      const symRegex = new RegExp(`(^|[\\s,:(./"-])${sym}([\\s,:(./"-]|$)`, "i");
+
+      const directMatches: any[] = [];
+      const partialMatches: any[] = [];
+      const matchedKeys = new Set<string>();
+
+      for (const a of rawPool) {
+        const key = a.link || a.url || a.title;
+        const text = `${a.title || ""} ${a.summary || ""}`.toLowerCase();
+
+        // Bỏ tin rác
+        if (JUNK_KEYWORDS.some((k) => text.includes(k))) continue;
+
+        // Kiểm tra trực tiếp
+        const isDirectSym =
+          symRegex.test(a.title || "") || symRegex.test(a.summary || "");
+        const isDirectName = tickerInfo.names.some((n) =>
+          text.includes(n.toLowerCase())
+        );
+
+        if (isDirectSym || isDirectName) {
+          if (!matchedKeys.has(key)) {
+            matchedKeys.add(key);
+            directMatches.push(a);
+          }
+          continue;
+        }
+
+        // Kiểm tra liên quan một phần (ngành nghề / nhóm ngành)
+        const isSectorMatch = tickerInfo.sector.some((s) =>
+          text.includes(s.toLowerCase())
+        );
+        const hasFinancialContext = MARKET_FINANCE_KEYWORDS.some((k) =>
+          text.includes(k)
+        );
+
+        if (isSectorMatch && hasFinancialContext) {
+          if (!matchedKeys.has(key)) {
+            matchedKeys.add(key);
+            partialMatches.push(a);
+          }
         }
       }
 
-      return (results || []).slice(0, limit).map((n: any) => ({
+      // Sắp xếp theo ngày mới nhất
+      directMatches.sort(
+        (a, b) =>
+          new Date(b.publishedAt || b.date).getTime() -
+          new Date(a.publishedAt || a.date).getTime()
+      );
+      partialMatches.sort(
+        (a, b) =>
+          new Date(b.publishedAt || b.date).getTime() -
+          new Date(a.publishedAt || a.date).getTime()
+      );
+
+      // Ưu tiên tin trực tiếp trước, nếu thiếu thì bổ sung tin liên quan ngành
+      const directItems: NewsItem[] = directMatches.map((n) => ({
         title: n.title || "",
         source: n.source || "Tổng hợp",
-        date: n.publishedAt || n.publishDate || n.date || new Date().toISOString().slice(0, 10),
+        date: n.publishedAt || n.publishDate || n.date || new Date().toISOString(),
         url: n.url || n.link || "",
+        summary: n.summary || "",
+        relevance: "direct" as const,
       }));
+
+      const partialItems: NewsItem[] = partialMatches.map((n) => ({
+        title: n.title || "",
+        source: n.source || "Tổng hợp",
+        date: n.publishedAt || n.publishDate || n.date || new Date().toISOString(),
+        url: n.url || n.link || "",
+        summary: n.summary || "",
+        relevance: "partial" as const,
+      }));
+
+      // Nếu có bài liên quan trực tiếp hoặc một phần: ghép lại và lấy theo limit
+      // Nếu hoàn toàn không có bài liên quan nào trong 7 ngày: trả về mảng rỗng [] (không gán tin rác)
+      return [...directItems, ...partialItems].slice(0, limit);
     },
-    600_000 // 10 minutes
+    300_000 // 5 minutes TTL
   ) as Promise<NewsItem[]>;
 }
+

@@ -125,7 +125,7 @@ describe("layout-storage", () => {
     expect(loadModuleOrder(mockStorage)).toEqual(DEFAULT_MODULE_ORDER);
 
     // Save custom order
-    const customOrder: ModuleId[] = ["overview", "chart", "watchlist"];
+    const customOrder: ModuleId[] = ["overview", "chart", "news", "watchlist"];
     saveModuleOrder(customOrder, mockStorage);
     expect(loadModuleOrder(mockStorage)).toEqual(customOrder);
 
@@ -135,7 +135,7 @@ describe("layout-storage", () => {
 
     // Missing modules in custom order are auto-appended
     mockStorage.setItem(STORAGE_KEYS.MODULE_ORDER, JSON.stringify(["watchlist"]));
-    expect(loadModuleOrder(mockStorage)).toEqual(["watchlist", "chart", "overview"]);
+    expect(loadModuleOrder(mockStorage)).toEqual(["watchlist", "chart", "overview", "news"]);
   });
 
   it("loads and saves module visibility with chart and overview enabled by default", async () => {
@@ -146,14 +146,16 @@ describe("layout-storage", () => {
       chart: true,
       watchlist: false,
       overview: true,
+      news: true,
     });
     expect(loadModuleVisibility(mockStorage)).toEqual(DEFAULT_MODULE_VISIBILITY);
 
-    saveModuleVisibility({ chart: true, watchlist: true, overview: false }, mockStorage);
+    saveModuleVisibility({ chart: true, watchlist: true, overview: false, news: false }, mockStorage);
     expect(loadModuleVisibility(mockStorage)).toEqual({
       chart: true,
       watchlist: true,
       overview: false,
+      news: false,
     });
   });
 

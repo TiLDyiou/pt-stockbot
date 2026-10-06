@@ -41,11 +41,21 @@ export interface ValuationRatios {
   pe: number | null;
   pb: number | null;
   ps: number | null;
+  peg?: number | null;
+  epsGrowth?: number | null;
   roe?: number | null;
   roa?: number | null;
+  roic?: number | null;
+  evToEbitda?: number | null;
+  netProfitMargin?: number | null;
+  debtToEquity?: number | null;
   marketCap?: number | null;
   year?: string | number;
   quarter?: number;
+  industry?: string | null;
+  industryPe?: number | null;
+  industryPb?: number | null;
+  industryRoe?: number | null;
 }
 
 export interface FundamentalMetric {
@@ -78,4 +88,7 @@ export interface NewsItem {
   source: string;
   date: string;
   url?: string;
+  summary?: string;
+  relevance?: "direct" | "partial" | "market";
 }
+

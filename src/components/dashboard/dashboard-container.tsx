@@ -18,6 +18,7 @@ import {
 import { StockChart } from "../chart/stock-chart";
 import { WatchlistWidget } from "../watchlist/watchlist-widget";
 import { MarketOverviewWidget } from "./market-overview-widget";
+import { StockNewsWidget } from "./stock-news-widget";
 import { MarketTickerStrip } from "./market-ticker-strip";
 import {
   LayoutGridIcon,
@@ -26,6 +27,7 @@ import {
   EarthIcon,
   GripVerticalIcon,
 } from "lucide-animated";
+import { Newspaper } from "lucide-react";
 
 export const MODULE_CONFIG: Record<
   ModuleId,
@@ -34,6 +36,7 @@ export const MODULE_CONFIG: Record<
   chart: { label: "Biểu đồ", icon: ChartLineIcon },
   watchlist: { label: "Danh mục", icon: BookmarkIcon },
   overview: { label: "Tổng quan", icon: EarthIcon },
+  news: { label: "Tin tức", icon: Newspaper as any },
 };
 
 export interface DashboardContainerProps {
@@ -57,7 +60,7 @@ export function DashboardContainer({
 }: DashboardContainerProps) {
   const [chartTabs, setChartTabs] = useState<string[]>(["VNINDEX"]);
   const [activeSymbol, setActiveSymbol] = useState<string>("VNINDEX");
-  const [maximizedWidget, setMaximizedWidget] = useState<"chart" | "overview" | null>(null);
+  const [maximizedWidget, setMaximizedWidget] = useState<ModuleId | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [localModules, setLocalModules] = useState<ModuleVisibility>(DEFAULT_MODULE_VISIBILITY);
   const [localModuleOrder, setLocalModuleOrder] = useState<ModuleId[]>(DEFAULT_MODULE_ORDER);
@@ -113,6 +116,12 @@ export function DashboardContainer({
       id: "market-overview-default",
       type: "market_overview",
       title: "Tổng quan thị trường",
+      size: "single",
+    });
+    widgets.push({
+      id: "news-default",
+      type: "news",
+      title: "Tin tức",
       size: "single",
     });
 
@@ -300,6 +309,22 @@ export function DashboardContainer({
             dragHandle={renderDragHandle("overview")}
           />
         );
+      case "news":
+        return (
+          <StockNewsWidget
+            symbol={activeSymbol}
+            onSelectSymbol={handleSelectSymbol}
+            isMaximized={maximizedWidget === "news"}
+            onToggleMaximize={() =>
+              setMaximizedWidget(maximizedWidget === "news" ? null : "news")
+            }
+            onCloseModule={() => {
+              setMaximizedWidget(null);
+              setModuleVisible("news", false);
+            }}
+            dragHandle={renderDragHandle("news")}
+          />
+        );
     }
   };
 
@@ -353,24 +378,85 @@ export function DashboardContainer({
 
   const renderWorkspace = () => {
     // 1. Maximized single widget
-    if (maximizedWidget === "chart") {
+    if (maximizedWidget) {
       return (
         <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-          {renderModule("chart")}
-        </div>
-      );
-    }
-    if (maximizedWidget === "overview") {
-      return (
-        <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-          {renderModule("overview")}
+          {renderModule(maximizedWidget)}
         </div>
       );
     }
 
     const activeModules = moduleOrder.filter((m) => modules[m]);
 
-    // 2. All 3 modules active
+    // 2. All 4 modules active
+    if (activeModules.length >= 4) {
+      return (
+        <PanelGroup
+          direction="vertical"
+          id="dashboard-vertical-panels-4"
+          autoSaveId="dashboard-vertical-panels-4-v1"
+          className="h-full w-full flex-1"
+        >
+          <Panel
+            id={`panel-${activeModules[0]}`}
+            defaultSize={52}
+            minSize={25}
+            className="flex flex-col min-h-0 overflow-hidden"
+          >
+            {renderModuleSlot(activeModules[0])}
+          </Panel>
+
+          <PanelResizeHandle className="h-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-row-resize shrink-0" />
+
+          <Panel
+            id="panel-bottom-row-4"
+            defaultSize={48}
+            minSize={20}
+            className="flex flex-col min-h-0 overflow-hidden"
+          >
+            <PanelGroup
+              direction="horizontal"
+              id="dashboard-bottom-panels-4"
+              autoSaveId="dashboard-bottom-panels-4-v1"
+              className="h-full w-full flex-1"
+            >
+              <Panel
+                id={`panel-${activeModules[1]}`}
+                defaultSize={34}
+                minSize={15}
+                className="flex flex-col min-h-0 overflow-hidden"
+              >
+                {renderModuleSlot(activeModules[1])}
+              </Panel>
+
+              <PanelResizeHandle className="w-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-col-resize shrink-0" />
+
+              <Panel
+                id={`panel-${activeModules[2]}`}
+                defaultSize={33}
+                minSize={15}
+                className="flex flex-col min-h-0 overflow-hidden"
+              >
+                {renderModuleSlot(activeModules[2])}
+              </Panel>
+
+              <PanelResizeHandle className="w-1 bg-slate-200/80 dark:bg-zinc-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-500 transition-colors cursor-col-resize shrink-0" />
+
+              <Panel
+                id={`panel-${activeModules[3]}`}
+                defaultSize={33}
+                minSize={15}
+                className="flex flex-col min-h-0 overflow-hidden"
+              >
+                {renderModuleSlot(activeModules[3])}
+              </Panel>
+            </PanelGroup>
+          </Panel>
+        </PanelGroup>
+      );
+    }
+
+    // 3. Exactly 3 modules active
     if (activeModules.length === 3) {
       return (
         <PanelGroup

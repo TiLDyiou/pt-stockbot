@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET as getCandlesHandler } from "../app/api/candles/route";
 import { GET as getSparklineHandler } from "../app/api/sparkline/route";
 import { GET as getRatiosHandler } from "../app/api/ratios/route";
+import { GET as getNewsHandler } from "../app/api/news/route";
 import { POST as getRecommendationsHandler } from "../app/api/watchlist/recommendations/route";
 import * as vnstockClient from "../lib/vnstock/client";
 import { NextRequest } from "next/server";
@@ -99,6 +100,51 @@ describe("API Edge / Boundary Tests", () => {
       expect(data.pe).toBe(11.66);
       expect(data.pb).toBe(2.93);
       expect(data.ps).toBe(1.84);
+    });
+  });
+
+  describe("/api/news", () => {
+    it("returns news list for requested symbol", async () => {
+      vi.spyOn(vnstockClient, "getNews").mockResolvedValue([
+        {
+          title: "HPG công bố kết quả kinh doanh quý 2 tăng trưởng mạnh",
+          source: "Vietstock",
+          date: "2026-10-05T10:00:00.000Z",
+          url: "https://vietstock.vn/hpg-kqkd",
+          summary: "Lợi nhuận sau thuế của HPG tăng 57% so với cùng kỳ.",
+        },
+      ]);
+
+      const req = new NextRequest("http://localhost:3000/api/news?symbol=HPG&limit=5");
+      const res = await getNewsHandler(req);
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.symbol).toBe("HPG");
+      expect(Array.isArray(data.news)).toBe(true);
+      expect(data.news.length).toBe(1);
+      expect(data.news[0].title).toContain("HPG");
+      expect(data.news[0].source).toBe("Vietstock");
+      expect(data.news[0].summary).toBeDefined();
+    });
+
+    it("falls back to market news when symbol is omitted", async () => {
+      vi.spyOn(vnstockClient, "getNews").mockResolvedValue([
+        {
+          title: "VN-Index tăng điểm nhờ nhóm cổ phiếu trụ",
+          source: "VnExpress",
+          date: "2026-10-05T12:00:00.000Z",
+          url: "https://vnexpress.net/vnindex-tang",
+        },
+      ]);
+
+      const req = new NextRequest("http://localhost:3000/api/news");
+      const res = await getNewsHandler(req);
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.symbol).toBe("MARKET");
+      expect(data.news.length).toBe(1);
     });
   });
 
